@@ -65,7 +65,7 @@ public class Scanner
             ["var"] = TokenType.Var,
             ["while"] = TokenType.While
         }.ToImmutableDictionary();
-    private Token BuildToken(TokenType type, string lexeme, int col = -1, int line = -1) => new(line != -1 ? line : _line, col != -1 ? col : _col, type, lexeme);
+    private Token BuildToken(TokenType type, string? lexeme, int col = -1, int line = -1) => new(line != -1 ? line : _line, col != -1 ? col : _col, type, lexeme);
     private Token BuildToken(TokenType type, int col = -1, int line = -1) => BuildToken(type, null, col, line);
 
     private Token BuildToken(char expectedChar, TokenType matchedToken, TokenType unmatchedToken)
@@ -148,7 +148,7 @@ public class Scanner
                 lexeme.Append(c);
                 if (lexeme[^1] != '"')
                 {
-                    throw new ScannerException("Unterminated string", line, col);
+                    throw new ScannerException("Unterminated string.", line, col);
                 }
                 
                 return BuildToken(TokenType.String, lexeme.ToString(), col, line);
@@ -170,12 +170,12 @@ public class Scanner
 
                 if (seenDecimal && c == '.')
                 {
-                    throw new ScannerException("Number contains multiple decimal points", _line, col);
+                    throw new ScannerException("Number contains multiple decimal points.", _line, col);
                 }
 
                 if (lexeme[^1] == '.')
                 {
-                    throw new ScannerException("Number ends with a decimal point", _line, col);
+                    throw new ScannerException("Number ends with a decimal point.", _line, col);
                 }
 
                 return BuildToken(TokenType.Number, lexeme.ToString(), col);
@@ -205,7 +205,7 @@ public class Scanner
             case '\n':
                 return null;
             default:
-                throw new ScannerException($"Unexpected char {c}", _line, _col);
+                throw new ScannerException($"Unexpected char '{c}'.", _line, _col);
         }
     }
 
@@ -216,7 +216,7 @@ public class Scanner
         {
         }
 
-        return token!;
+        return token;
     }
 
     private bool _isStarted;
@@ -228,7 +228,7 @@ public class Scanner
         }
         _isStarted = true;
         var token = ScanNonNullToken();
-        for (; token?.Type != TokenType.Eof; token = ScanNonNullToken())
+        for (; token.Type != TokenType.Eof; token = ScanNonNullToken())
         {
             yield return token;
         }
