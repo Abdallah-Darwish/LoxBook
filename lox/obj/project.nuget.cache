@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "Id7DMzjiJxLNcRoJEtuN7/sUPUPtGOiheJgeizxEoi8MulVZDsxq8wpat9v5vWgEHEySVvJnrYfWOuKsIGCaTA==",
+  "success": true,
+  "projectFilePath": "/home/abdallah/LSharp/lox/lox.csproj",
+  "expectedPackageFiles": [
+    "/home/abdallah/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.9/microsoft.aspnetcore.app.ref.6.0.9.nupkg.sha512"
+  ],
+  "logs": []
+}
