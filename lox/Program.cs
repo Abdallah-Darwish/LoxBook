@@ -1,11 +1,14 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using Lox;
-string src = @"var saif = 22;
-var x = 1 + 3;";
+using Lox.Expressions;
+using Lox.Visitors;
 
-Scanner sc = new(new StringReader(src));
-foreach (var token in sc.GetTokens())
-{
-    Console.WriteLine(token?.ToString() ?? "Comment");
-}
+Expression expression = new Binary(
+    new Unary(
+        new Token(0, 0, TokenType.Minus, null),
+        new Literal(123)),
+    new Token(0, 0, TokenType.Star, null),
+    new Grouping(new Literal(45.67)));
+
+Console.WriteLine(expression.Accept(new AstPrinter()));

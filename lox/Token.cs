@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Lox;
 
 public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
@@ -14,7 +16,7 @@ public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
                 $"Can't convert {this} value to {type}"),
             TokenType.Number => (T)(object)double.Parse(Lexeme),
             _ => throw new ArgumentOutOfRangeException(nameof(T), type,
-                $"This method only supports: [string, double] types")
+                "This method only supports: [string, double] types")
         };
     }
 }
