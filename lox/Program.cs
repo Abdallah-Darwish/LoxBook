@@ -1,6 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using lox;
+using Lox;
 string src = @"var saif = 22;
 var x = 1 + 3;";
 

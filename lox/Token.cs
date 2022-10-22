@@ -1,4 +1,4 @@
-namespace lox;
+namespace Lox;
 
 public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
 {

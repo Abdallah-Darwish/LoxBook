@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text;
 
-namespace lox;
+namespace Lox;
 
 public class Scanner
 {
@@ -46,7 +46,7 @@ public class Scanner
     }
 
     private static readonly ImmutableDictionary<string, TokenType> s_keywords =
-        new Dictionary<string, TokenType> 
+        new Dictionary<string, TokenType>
         {
             ["and"] = TokenType.And,
             ["class"] = TokenType.Class,
@@ -133,72 +133,72 @@ public class Scanner
 
                 return null;
             case '"':
-            {
-                StringBuilder lexeme = new();
-                lexeme.Append(c);
-                c = Read();
-                int line = _line;
-                int col = _col;
-                while (c != '\0' && c != '"')
                 {
+                    StringBuilder lexeme = new();
                     lexeme.Append(c);
                     c = Read();
-                }
+                    int line = _line;
+                    int col = _col;
+                    while (c != '\0' && c != '"')
+                    {
+                        lexeme.Append(c);
+                        c = Read();
+                    }
 
-                lexeme.Append(c);
-                if (lexeme[^1] != '"')
-                {
-                    throw new ScannerException("Unterminated string.", line, col);
+                    lexeme.Append(c);
+                    if (lexeme[^1] != '"')
+                    {
+                        throw new ScannerException("Unterminated string.", line, col);
+                    }
+
+                    return BuildToken(TokenType.String, lexeme.ToString(), col, line);
                 }
-                
-                return BuildToken(TokenType.String, lexeme.ToString(), col, line);
-            }
             case >= '0' and <= '9':
-            {
-                StringBuilder lexeme = new();
-                lexeme.Append(c);
-                c = Peek();
-                int col = _col;
-                bool seenDecimal = false;
-                while (c is > '0' and < '9' || (c == '.' && !seenDecimal))
                 {
-                    c = Read();
-                    seenDecimal |= c == '.';
+                    StringBuilder lexeme = new();
                     lexeme.Append(c);
                     c = Peek();
-                }
+                    int col = _col;
+                    bool seenDecimal = false;
+                    while (c is > '0' and < '9' || (c == '.' && !seenDecimal))
+                    {
+                        c = Read();
+                        seenDecimal |= c == '.';
+                        lexeme.Append(c);
+                        c = Peek();
+                    }
 
-                if (seenDecimal && c == '.')
-                {
-                    throw new ScannerException("Number contains multiple decimal points.", _line, col);
-                }
+                    if (seenDecimal && c == '.')
+                    {
+                        throw new ScannerException("Number contains multiple decimal points.", _line, col);
+                    }
 
-                if (lexeme[^1] == '.')
-                {
-                    throw new ScannerException("Number ends with a decimal point.", _line, col);
-                }
+                    if (lexeme[^1] == '.')
+                    {
+                        throw new ScannerException("Number ends with a decimal point.", _line, col);
+                    }
 
-                return BuildToken(TokenType.Number, lexeme.ToString(), col);
-            }
+                    return BuildToken(TokenType.Number, lexeme.ToString(), col);
+                }
             case '_':
             case >= 'A' and <= 'Z':
             case >= 'a' and <= 'z':
-            {
-                StringBuilder lexeme = new();
-                lexeme.Append(c);
-                var col = _col;
-                c = Peek();
-                while (c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_')
                 {
-                    c = Read();
+                    StringBuilder lexeme = new();
                     lexeme.Append(c);
+                    var col = _col;
                     c = Peek();
-                }
+                    while (c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_')
+                    {
+                        c = Read();
+                        lexeme.Append(c);
+                        c = Peek();
+                    }
 
-                return s_keywords.TryGetValue(lexeme.ToString(), out var keywordType)
-                    ? BuildToken(keywordType, col)
-                    : BuildToken(TokenType.Identifier, lexeme.ToString(), col);
-            }
+                    return s_keywords.TryGetValue(lexeme.ToString(), out var keywordType)
+                        ? BuildToken(keywordType, col)
+                        : BuildToken(TokenType.Identifier, lexeme.ToString(), col);
+                }
             case ' ':
             case '\r':
             case '\t':
