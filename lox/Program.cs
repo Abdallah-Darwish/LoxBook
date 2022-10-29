@@ -18,4 +18,4 @@ expression = new Binary(
     new Token(0, 0, TokenType.Star, null),
     new Grouping(new Binary(new Literal(new Token(0, 0, TokenType.Number, "4")), new Token(0, 0, TokenType.Minus, null),
         new Literal(new Token(0, 0, TokenType.Number, "3")))));
-Console.WriteLine(expression.Accept(new ReversePlishNotationPrinter()));
+Console.WriteLine(expression.Accept(new ReversePolishNotationPrinter()));

@@ -1,11 +1,12 @@
+using System.Collections;
 using System.Collections.Immutable;
 using System.Text;
 
 namespace Lox;
 
-public class Scanner
+public class Scanner : IEnumerator<Token>
 {
-    private readonly TextReader _source;
+    private TextReader _source;
 
     public Scanner(TextReader source)
     {
@@ -219,20 +220,48 @@ public class Scanner
         return token;
     }
 
-    private bool _isStarted;
-    public IEnumerable<Token> GetTokens()
+    private bool _isExhausted;
+    private Token? _current;
+    public bool MoveNext()
     {
-        if (_isStarted)
+        if (_isExhausted)
         {
-            throw new ScannerException("This scanner is already exhausted, please create a new one.", 0, 0);
+            return false;
         }
-        _isStarted = true;
-        var token = ScanNonNullToken();
-        for (; token.Type != TokenType.Eof; token = ScanNonNullToken())
+        _current = ScanNonNullToken();
+        if (_current.Type == TokenType.Eof)
         {
-            yield return token;
+            _isExhausted = true;
+            _source.Dispose();
         }
 
-        yield return token;
+        return true;
+    }
+
+    public Token GetAndMoveNext()
+    {
+        var current = Current;
+        MoveNext();
+        return current;
+    }
+
+    public void Reset()
+    {
+        if (_isExhausted)
+        {
+            throw new NotSupportedException("This scanner is already exhausted, please create a new one.");
+        }
+    }
+
+    public Token Current =>
+        _current ?? throw new ScannerException("This scanner is disposed or not started yet.", 0, 0);
+
+    object IEnumerator.Current => Current;
+
+    public void Dispose()
+    {
+        _isExhausted = true;
+        _source.Dispose();
+        _current = null;
     }
 }

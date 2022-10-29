@@ -6,8 +6,8 @@ class Expression:
     name: str
     types: List[Tuple[str, str]]
 
-    def __init__(self, definiton: str):
-        self.name, self.types = definiton.strip().split(":")
+    def __init__(self, definition: str):
+        self.name, self.types = definition.strip().split(":")
         self.name = self.name.strip()
         self.types = [
             tuple(j.strip() for j in i.split()) for i in self.types.split(",")
@@ -21,6 +21,9 @@ public record class {self.name}({types_str}) : {base_name}
     public override T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
 }}
 """
+    @property
+    def visitor_method(self):
+        return f"\tT Visit({self.name} e);"
 
 
 def generate_ast(expressions: List[Expression], namespace: str, base_name: str) -> str:
@@ -42,7 +45,7 @@ def save_ast(p: Path, expressions: List[Expression], namespace: str, base_name: 
 
 
 def generate_visitor_interface(expressions: List[Expression], namespace: str) -> str:
-    visiting_methods = "\n".join(f"    T Visit({e.name} e);" for e in expressions)
+    visiting_methods = "\n".join(e.visitor_method for e in expressions)
     return f"""using Lox.Expressions;
 namespace {namespace};
 public interface IVisitor<T>
@@ -65,7 +68,7 @@ def parse_ast_txt(definition: str) -> List[Expression]:
 ast_txt = """
 Binary   : Expression Left, Token Operator, Expression Right
 Grouping : Expression Expression
-Literal  : object Value
+Literal  : Token Value
 Unary    : Token Operator, Expression Right
 """
 ast_base_name = "Expression"

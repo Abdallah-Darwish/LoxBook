@@ -1,7 +1,7 @@
 using Lox.Expressions;
 
 namespace Lox.Visitors;
-public class ReversePlishNotationPrinter : IVisitor<string>
+public class ReversePolishNotationPrinter : IVisitor<string>
 {
     public string Visit(Binary e) => $"{e.Left.Accept(this)} {e.Right.Accept(this)} {e.Operator.Text}";
 
