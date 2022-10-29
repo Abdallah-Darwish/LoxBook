@@ -15,7 +15,7 @@ public record class Grouping(Expression Expression) : Expression
     public override T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
 }
 
-public record class Literal(object Value) : Expression
+public record class Literal(Token Value) : Expression
 {
     public override T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
 }
