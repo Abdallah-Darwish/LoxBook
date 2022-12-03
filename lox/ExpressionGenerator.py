@@ -66,6 +66,7 @@ def parse_ast_txt(definition: str) -> List[Expression]:
 
 
 ast_txt = """
+Ternary  : Expression Condition, Token QuestionMark, Expression Left, Token Colon, Expression Right
 Binary   : Expression Left, Token Operator, Expression Right
 Grouping : Expression Expression
 Literal  : Token Value

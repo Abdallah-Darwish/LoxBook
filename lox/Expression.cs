@@ -5,6 +5,11 @@ public abstract record class Expression()
     public abstract T Accept<T>(IVisitor<T> visitor);
 }
 
+public record class Ternary(Expression Condition, Token QuestionMark, Expression Left, Token Colon, Expression Right) : Expression
+{
+    public override T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
+}
+
 public record class Binary(Expression Left, Token Operator, Expression Right) : Expression
 {
     public override T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);

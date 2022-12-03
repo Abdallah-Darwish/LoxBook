@@ -102,6 +102,10 @@ public class Scanner : IEnumerator<Token>
                 return BuildToken(TokenType.Semicolon);
             case '*':
                 return BuildToken(TokenType.Star);
+            case '?':
+                return BuildToken(TokenType.QuestionMark);
+            case ':':
+                return BuildToken(TokenType.Colon);
             case '!':
                 return BuildToken('=', TokenType.BangEqual, TokenType.Bang);
             case '=':

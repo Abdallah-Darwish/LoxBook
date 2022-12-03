@@ -5,6 +5,8 @@ namespace Lox.Visitors;
 public class AstPrinter : IVisitor<string>
 {
     private string Parenthesize(string name, params Expression[] expressions) => $"({name} {string.Join(" ", expressions.Select(e => e.Accept(this)))})";
+    public string Visit(Ternary e) => Parenthesize("ternary", e.Condition, e.Left, e.Right);
+
     public string Visit(Binary e) => Parenthesize(e.Operator.Text, e.Left, e.Right);
 
     public string Visit(Grouping e) => Parenthesize("group", e.Expression);

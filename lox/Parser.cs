@@ -1,5 +1,6 @@
 using Lox;
 using Lox.Expressions;
+using Expression = Lox.Expressions.Expression;
 
 namespace lox;
 
@@ -7,7 +8,43 @@ public class Parser
 {
     private readonly Scanner _scanner;
 
-    private Expression ParseExpression() => ParseEquality();
+    private Expression ParseExpression() => ParseComma();
+
+    private Expression ParseComma()
+    {
+        var expr = ParseTernary();
+        while (_scanner.Current.Type == TokenType.Comma)
+        {
+            var com = _scanner.GetAndMoveNext();
+            expr = new Binary(expr, com, ParseTernary());
+        }
+
+        return expr;
+    }
+
+    private Expression ParseTernary()
+    {
+        var condition = ParseEquality();
+        if (_scanner.Current.Type != TokenType.QuestionMark)
+        {
+            return condition;
+        }
+
+        var questionMark = _scanner.GetAndMoveNext();
+        var left = ParseEquality();
+        if (_scanner.Current.Type != TokenType.Colon)
+        {
+            throw new ParserException(
+                $"Expected a token of type {TokenType.Colon} instead found token of type {_scanner.Current.Type}",
+                _scanner.Current);
+        }
+
+        var colon = _scanner.GetAndMoveNext();
+
+        var right = ParseEquality();
+        return new Ternary(condition, questionMark, left, colon, right);
+    }
+    
 
     private Expression ParseEquality()
     {
@@ -85,7 +122,7 @@ public class Parser
         }
 
         _scanner.MoveNext();
-        var expr = ParseExpression(); // Saif: Isn't calling expression here wrong since we're matching a lower precedence rule ?
+        var expr = ParseExpression();
         if (_scanner.Current.Type != TokenType.RightParentheses)
         {
             throw new ParserException(
@@ -95,5 +132,22 @@ public class Parser
 
         _scanner.MoveNext();
         return new Grouping(expr);
+    }
+
+    private void Synchronize()
+    {
+        while (_scanner.MoveNext())
+        {
+            if (_scanner.Current.Type == TokenType.Semicolon)
+            {
+                //We want to consume the semicolon here but not the rest of the sync points
+                _scanner.MoveNext();
+            }
+            if (_scanner.Current.Type is TokenType.Class or TokenType.Fun or TokenType.Var or TokenType.For
+                or TokenType.If or TokenType.While or TokenType.Print or TokenType.Return)
+            {
+                return;
+            }
+        }
     }
 }

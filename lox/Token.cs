@@ -4,20 +4,24 @@ namespace Lox;
 
 public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
 {
-    public T GetValue<T>()
+    private object? _value;
+    public object? Value
     {
-        var type = typeof(T);
-        return Type switch
+        get
         {
-            TokenType.String when type != typeof(string) || Lexeme is null => throw new InvalidCastException(
-                $"Can't convert {this} value to {type}"),
-            TokenType.String => (T)(object)Lexeme[1..^1],
-            TokenType.Number when type != typeof(double) || Lexeme is null => throw new InvalidCastException(
-                $"Can't convert {this} value to {type}"),
-            TokenType.Number => (T)(object)double.Parse(Lexeme),
-            _ => throw new ArgumentOutOfRangeException(nameof(T), type,
-                "This method only supports: [string, double] types")
-        };
+            if (Type != TokenType.Nil && _value is null)
+            {
+                _value = Type switch
+                {
+                    TokenType.True => true,
+                    TokenType.False => false,
+                    TokenType.String => Lexeme[1..^1],
+                    TokenType.Number => double.Parse(Lexeme)
+                };
+            }
+
+            return _value;
+        }
     }
     private static readonly ImmutableDictionary<TokenType, string> TokenTextRepresentation = new Dictionary<TokenType, string>
     {

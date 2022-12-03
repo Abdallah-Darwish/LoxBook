@@ -1,7 +1,8 @@
 using Lox.Expressions;
 namespace Lox.Visitors;
-public interface IVisitor<out T>
+public interface IVisitor<T>
 {
+	T Visit(Ternary e);
 	T Visit(Binary e);
 	T Visit(Grouping e);
 	T Visit(Literal e);
