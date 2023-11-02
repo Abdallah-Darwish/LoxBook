@@ -1,6 +1,4 @@
-using Lox;
-
-namespace lox;
+namespace Lox;
 
 public class ParserException : Exception
 {

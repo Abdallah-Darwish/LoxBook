@@ -22,6 +22,7 @@ public class Scanner : IEnumerator<Token>
         int c = _source.Peek();
         return c == -1 ? '\0' : (char)c;
     }
+
     private char Read()
     {
         int c = _source.Read();
@@ -75,6 +76,9 @@ public class Scanner : IEnumerator<Token>
         Read();
         return BuildToken(matchedToken, _col - 1);
     }
+    /// <summary>
+    /// Returns null for comments and spaces.
+    /// </summary>
     private Token? ScanSingleToken()
     {
         var c = Read();
@@ -185,6 +189,7 @@ public class Scanner : IEnumerator<Token>
 
                     return BuildToken(TokenType.Number, lexeme.ToString(), col);
                 }
+            //Identifier naming rules
             case '_':
             case >= 'A' and <= 'Z':
             case >= 'a' and <= 'z':
@@ -224,18 +229,18 @@ public class Scanner : IEnumerator<Token>
         return token;
     }
 
-    private bool _isExhausted;
+    public bool IsExhausted { get; private set; }
     private Token? _current;
     public bool MoveNext()
     {
-        if (_isExhausted)
+        if (IsExhausted)
         {
             return false;
         }
         _current = ScanNonNullToken();
         if (_current.Type == TokenType.Eof)
         {
-            _isExhausted = true;
+            IsExhausted = true;
             _source.Dispose();
         }
 
@@ -249,9 +254,9 @@ public class Scanner : IEnumerator<Token>
         return current;
     }
 
-    public void Reset()
+    void IEnumerator.Reset()
     {
-        if (_isExhausted)
+        if (IsExhausted)
         {
             throw new NotSupportedException("This scanner is already exhausted, please create a new one.");
         }
@@ -264,8 +269,9 @@ public class Scanner : IEnumerator<Token>
 
     public void Dispose()
     {
-        _isExhausted = true;
+        IsExhausted = true;
         _source.Dispose();
         _current = null;
+        GC.SuppressFinalize(this);
     }
 }

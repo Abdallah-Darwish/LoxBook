@@ -1,12 +1,19 @@
-using Lox;
 using Lox.Expressions;
 using Expression = Lox.Expressions.Expression;
 
-namespace lox;
+namespace Lox;
 
 public class Parser
 {
     private readonly Scanner _scanner;
+
+    public Parser(Scanner scanner)
+    {
+        _scanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
+        _scanner.MoveNext();
+    }
+
+    public Expression Parse() => ParseExpression();
 
     private Expression ParseExpression() => ParseComma();
 
@@ -44,7 +51,7 @@ public class Parser
         var right = ParseEquality();
         return new Ternary(condition, questionMark, left, colon, right);
     }
-    
+
 
     private Expression ParseEquality()
     {

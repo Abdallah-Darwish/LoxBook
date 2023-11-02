@@ -1,11 +1,9 @@
 ﻿using Lox;
 using Lox.Expressions;
-using Lox.Visitors;
-string x = @"var bool = 1 == 1;
-var d = 2;
-";
+using Lox.Visitors.Interpreter;
+string x = """ "nil" - "nil" """;
 Scanner sc = new(new StringReader(x));
-while (sc.MoveNext())
-{
-    Console.WriteLine(sc.Current);
-}
+Parser p = new(sc);
+var exp = p.Parse();
+InterpreterVisitor interpreter = new();
+Console.WriteLine(exp.Accept(interpreter));
