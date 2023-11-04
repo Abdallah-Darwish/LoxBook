@@ -5,15 +5,15 @@ namespace Lox.Statements;
 
 public abstract record class Statement()
 {
-    public abstract T Accept<T>(IStatementVisitor<T> visitor);
+    public abstract void Accept(IVisitor visitor);
 }
 
 public record class ExpressionStatement(Expression Expression) : Statement
 {
-    public override T Accept<T>(IStatementVisitor<T> visitor) => visitor.Visit(this);
+    public override void Accept(IVisitor visitor) => visitor.Visit(this);
 }
 
 public record class Print(Expression Expression) : Statement
 {
-    public override T Accept<T>(IStatementVisitor<T> visitor) => visitor.Visit(this);
+    public override void Accept(IVisitor visitor) => visitor.Visit(this);
 }

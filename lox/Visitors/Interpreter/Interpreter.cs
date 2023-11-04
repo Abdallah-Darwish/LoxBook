@@ -1,10 +1,16 @@
 using System.Collections;
 using Lox.Expressions;
+using Lox.Statements;
 
 namespace Lox.Visitors.Interpreter;
 
-public class InterpreterVisitor : IExpressionVisitor<object>
+public class InterpreterVisitor : IVisitor<object>, IVisitor
 {
+    private TextWriter _output;
+    public InterpreterVisitor(TextWriter? output)
+    {
+        _output = output ?? Console.Out;
+    }
     private bool IsTruthy(object? obj)
     {
         if (obj is null) return false;
@@ -112,4 +118,8 @@ public class InterpreterVisitor : IExpressionVisitor<object>
             _ => throw new InvalidOperationException($"Unsupported operator {e.Operator.Type} type for {nameof(Unary)}"),
         };
     }
+
+    public void Visit(ExpressionStatement s) => s.Expression.Accept(this);
+
+    public void Visit(Print s) => _output.Write(s.Expression.Accept(this));
 }

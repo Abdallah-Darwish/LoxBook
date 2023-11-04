@@ -1,4 +1,5 @@
 using Lox.Expressions;
+using Lox.Statements;
 using Expression = Lox.Expressions.Expression;
 
 namespace Lox;
@@ -12,8 +13,30 @@ public class Parser
         _scanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
         _scanner.MoveNext();
     }
+    public Statement Parse() => ParseStatement();
+    public Statement ParseStatement()
+    {
+        Statement statement = _scanner.Current.Type switch
+        {
+            TokenType.Print => ParsePrint(),
+            _ => ParseExpressionStatement()
+        };
+        if (_scanner.Current.Type != TokenType.Semicolon)
+        {
+            throw new ParserException(
+                $"Expected a token of type {TokenType.Semicolon} instead found token of type {_scanner.Current.Type}",
+                _scanner.Current);
+        }
+        _scanner.GetAndMoveNext();
+        return statement;
+    }
 
-    public Expression Parse() => ParseExpression();
+    public ExpressionStatement ParseExpressionStatement() => new(ParseExpression());
+    public Print ParsePrint()
+    {
+        _scanner.GetAndMoveNext();
+        return new Print(ParseExpression());
+    }
 
     private Expression ParseExpression() => ParseComma();
 

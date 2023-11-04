@@ -2,8 +2,8 @@ using Lox.Statements;
 
 namespace Lox.Visitors;
 
-public interface IStatementVisitor<T>
+public interface IVisitor
 {
-	T Visit(ExpressionStatement e);
-	T Visit(Print s);
+	void Visit(ExpressionStatement e);
+	void Visit(Print s);
 }

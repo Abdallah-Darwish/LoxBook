@@ -2,7 +2,7 @@ using Lox.Expressions;
 
 namespace Lox.Visitors;
 
-public class AstPrinter : IExpressionVisitor<string>
+public class AstPrinter : IVisitor<string>
 {
     private string Parenthesize(string name, params Expression[] expressions) =>
         $"({name} {string.Join(" ", expressions.Select(e => e.Accept(this)))})";

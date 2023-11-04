@@ -1,9 +1,12 @@
 ﻿using Lox;
 using Lox.Expressions;
 using Lox.Visitors.Interpreter;
-string x = """ "nil" - "nil" """;
+string x = """"
+print "hhe";
+"""";
 Scanner sc = new(new StringReader(x));
 Parser p = new(sc);
 var exp = p.Parse();
-InterpreterVisitor interpreter = new();
-Console.WriteLine(exp.Accept(interpreter));
+InterpreterVisitor interpreter = new(null);
+exp.Accept(interpreter);
+Console.WriteLine();
