@@ -1,7 +1,7 @@
 using Lox.Expressions;
 
 namespace Lox.Visitors;
-public class ReversePolishNotationPrinter : IVisitor<string>
+public class ReversePolishNotationPrinter : IExpressionVisitor<string>
 {
     public string Visit(Ternary e) => $"{e.Condition.Accept(this)} {e.Left.Accept(this)} {e.Right.Accept(this)} ?";
 

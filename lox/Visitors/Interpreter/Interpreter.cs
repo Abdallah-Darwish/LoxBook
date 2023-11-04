@@ -3,7 +3,7 @@ using Lox.Expressions;
 
 namespace Lox.Visitors.Interpreter;
 
-public class InterpreterVisitor : IVisitor<object>
+public class InterpreterVisitor : IExpressionVisitor<object>
 {
     private bool IsTruthy(object? obj)
     {

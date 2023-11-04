@@ -2,10 +2,11 @@ using Lox.Expressions;
 
 namespace Lox.Visitors;
 
-public class AstPrinter : IVisitor<string>
+public class AstPrinter : IExpressionVisitor<string>
 {
-    private string Parenthesize(string name, params Expression[] expressions) => $"({name} {string.Join(" ", expressions.Select(e => e.Accept(this)))})";
-   
+    private string Parenthesize(string name, params Expression[] expressions) =>
+        $"({name} {string.Join(" ", expressions.Select(e => e.Accept(this)))})";
+
     public string Visit(Ternary e) => Parenthesize("ternary", e.Condition, e.Left, e.Right);
 
     public string Visit(Binary e) => Parenthesize(e.Operator.Text, e.Left, e.Right);

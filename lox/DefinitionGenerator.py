@@ -23,7 +23,7 @@ class SyntaxNode:
         return f"""
 public record class {self.name}({types_str}) : {base_name}
 {{
-    public override T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
+    public override T Accept<T>(I{base_name}Visitor<T> visitor) => visitor.Visit(this);
 }}
 """
     def generate_visitor_method(self):
@@ -31,22 +31,30 @@ public record class {self.name}({types_str}) : {base_name}
         return f"\tT Visit({self.name} {var_name});"
 
 class Ast:
-    namesapce: str
+    namespace: str
     base_name: str
     nodes: List[SyntaxNode]
+    definition_additional_namespaces: List[str] | None
 
-    def __init__(self, namespace: str, base_name: str, definition: str):
-        self.namesapce, self.base_name = namespace, base_name
+    def __init__(self, namespace: str, base_name: str, definition: str, definition_additional_namespaces: List[str] | None = None):
+        self.namespace, self.base_name = namespace, base_name
         self.nodes = [SyntaxNode(l) for l in definition.replace(BASE_PLACEHOLDER, base_name).splitlines() if l.strip()]
+        self.definition_additional_namespaces = definition_additional_namespaces
+
+    def _generate_base_definition(self):
+        return f"""public abstract record class {self.base_name}()
+{{
+    public abstract T Accept<T>(I{self.base_name}Visitor<T> visitor);
+}}"""
 
     def generate_definition(self):
         ast = "".join(e.generate_definition(self.base_name) for e in self.nodes)
-        return f"""using {make_namespace('Visitors')};
+        additional_usings = '\n'.join([f'using {ns};' for ns in self.definition_additional_namespaces]) + '\n' if self.definition_additional_namespaces else ''
+        return f"""{additional_usings}using {make_namespace('Visitors')};
+
 namespace {make_namespace(self.namespace)};
-public abstract record class {self.base_name}()
-{{
-    public abstract T Accept<T>(IVisitor<T> visitor);
-}}
+
+{self._generate_base_definition()}
 {ast}
 """.strip()
 
@@ -58,8 +66,10 @@ public abstract record class {self.base_name}()
     def generate_visitor_interface(self) -> str:
         visiting_methods = "\n".join(e.generate_visitor_method() for e in self.nodes)
         return f"""using {make_namespace(self.base_name + 's')};
-namespace {make_namespace(self.namesapce)};
-public interface I{self.namesapce}Visitor<T>
+
+namespace {make_namespace('Visitors')};
+
+public interface I{self.base_name}Visitor<T>
 {{
 {visiting_methods}
 }}
@@ -88,7 +98,7 @@ statements_ast_txt = """
 ExpressionStatement : Expression Expression
 Print               : Expression Expression
 """
-statements = Ast('Statements', 'Statement', statements_ast_txt)
+statements = Ast('Statements', 'Statement', statements_ast_txt, [make_namespace('Expressions')])
 
 expressions.save_definition_and_visitor()
 statements.save_definition_and_visitor()
