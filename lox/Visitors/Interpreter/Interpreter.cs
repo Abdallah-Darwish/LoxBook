@@ -48,27 +48,37 @@ public class InterpreterVisitor : IVisitor<object>
         switch (e.Operator.Type)
         {
             case TokenType.Plus:
-                var leftValue = e.Left.Accept(this);
-                if (leftValue is null || (leftValue is not double _ && leftValue is not string __))
                 {
-                    throw new TypeMismatchException(leftValue, e.Left, typeof(double), typeof(string));
+                    var leftValue = e.Left.Accept(this);
+                    if (leftValue is null || (leftValue is not double _ && leftValue is not string _))
+                    {
+                        throw new TypeMismatchException(leftValue, e.Left, typeof(double), typeof(string));
+                    }
+                    var rightValue = e.Right.Accept(this);
+                    if (rightValue is null || (rightValue is not double _ && rightValue is not string _))
+                    {
+                        throw new TypeMismatchException(rightValue, e.Right, typeof(double), typeof(string));
+                    }
+                    if (leftValue is string _ || rightValue is string _)
+                    {
+                        return leftValue.ToString() + rightValue.ToString();
+                    }
+                    return (double)leftValue + (double)rightValue;
                 }
-                var rightValue = e.Right.Accept(this);
-                if (rightValue is null || rightValue.GetType() != leftValue.GetType())
-                {
-                    throw new TypeMismatchException(rightValue, e.Right, leftValue.GetType());
-                }
-                if (leftValue is string stringLeftValue)
-                {
-                    return stringLeftValue + (string)rightValue;
-                }
-                return (double)leftValue + (double)rightValue;
             case TokenType.Minus:
                 return AsDouble(e.Right) - AsDouble(e.Left);
             case TokenType.Star:
                 return AsDouble(e.Right) * AsDouble(e.Right);
             case TokenType.Slash:
-                return AsDouble(e.Right) / AsDouble(e.Right);
+                {
+                    var leftValue = AsDouble(e.Left);
+                    var rightValue = AsDouble(e.Right);
+                    if (rightValue - 0 == double.Epsilon)
+                    {
+                        throw new ZeroDivisionException(leftValue, rightValue, e);
+                    }
+                    return leftValue / rightValue;
+                }
             case TokenType.EqualEqual:
                 return Compare(e.Left, e.Right) == 0;
             case TokenType.BangEqual:
