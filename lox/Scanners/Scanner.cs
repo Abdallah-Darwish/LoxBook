@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Immutable;
 using System.Text;
+using Lox.Parsers;
+using Lox.Core;
 
-namespace Lox;
+namespace Lox.Scanners;
 
 public class Scanner : IEnumerator<Token>
 {
@@ -250,6 +252,17 @@ public class Scanner : IEnumerator<Token>
     public Token GetAndMoveNext()
     {
         var current = Current;
+        MoveNext();
+        return current;
+    }
+
+    public Token GetAndMoveNext(TokenType expectedType)
+    {
+        var current = Current;
+        if (current.Type != expectedType)
+        {
+            throw new ParserException($"Expected a token of type {TokenType.RightParentheses} instead found token of type {Current.Type}", Current);
+        }
         MoveNext();
         return current;
     }

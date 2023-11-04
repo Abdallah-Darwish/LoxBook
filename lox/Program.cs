@@ -2,7 +2,7 @@
 using Lox.Expressions;
 using Lox.Visitors.Interpreter;
 string x = """"
-print "hhe";
+print "hhe"
 """";
 Scanner sc = new(new StringReader(x));
 Parser p = new(sc);

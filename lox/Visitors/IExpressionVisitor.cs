@@ -1,4 +1,4 @@
-using Lox.Expressions;
+using Lox.Core;
 
 namespace Lox.Visitors;
 
@@ -9,4 +9,5 @@ public interface IVisitor<T>
 	T Visit(Grouping s);
 	T Visit(Literal s);
 	T Visit(Unary s);
+	T Visit(Variable s);
 }

@@ -1,4 +1,4 @@
-using Lox.Expressions;
+using Lox.Core;
 
 namespace Lox.Visitors;
 public class ReversePolishNotationPrinter : IVisitor<string>

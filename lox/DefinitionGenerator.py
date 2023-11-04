@@ -67,7 +67,7 @@ namespace {make_namespace(self.namespace)};
 
     def generate_visitor_interface(self) -> str:
         visiting_methods = "\n".join(e.generate_visitor_method(self.is_visitor_typed) for e in self.nodes)
-        return f"""using {make_namespace(self.base_name + 's')};
+        return f"""using {make_namespace(self.namespace)};
 
 namespace {make_namespace('Visitors')};
 
@@ -84,23 +84,25 @@ public interface IVisitor{'<T>' if self.is_visitor_typed else ''}
 
     def save_definition_and_visitor(self, d: Path | None = None):
         d = d or Path(__file__).parent
-        self.save_definition(d.joinpath(f"{self.base_name}.cs"))
+        self.save_definition(d.joinpath(self.namespace).joinpath(f"{self.base_name}.cs"))
         self.save_visitor_interface(d.joinpath("Visitors").joinpath(f"I{self.base_name}Visitor.cs"))
 
 expressions_ast_txt = """
-Ternary  : $base$ Condition, Token QuestionMark, $base$ Left, Token Colon, $base$ Right
+Ternary  : $base$ Condition, $base$ Left, $base$ Right
 Binary   : $base$ Left, Token Operator, $base$ Right
 Grouping : $base$ Expression
 Literal  : Token Value
 Unary    : Token Operator, $base$ Right
+Variable : Token Name
 """
-expressions = Ast('Expressions', 'Expression', expressions_ast_txt, True)
+expressions = Ast('Core', 'Expression', expressions_ast_txt, True)
 
 statements_ast_txt = """
 ExpressionStatement : Expression Expression
 Print               : Expression Expression
+VariableStatement   : Token Name, Expression? Initializer
 """
-statements = Ast('Statements', 'Statement', statements_ast_txt, False, [make_namespace('Expressions')])
+statements = Ast('Core', 'Statement', statements_ast_txt, False)
 
 expressions.save_definition_and_visitor()
 statements.save_definition_and_visitor()

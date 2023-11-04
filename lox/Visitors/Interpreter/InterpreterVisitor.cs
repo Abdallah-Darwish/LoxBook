@@ -2,12 +2,12 @@ using System.Collections;
 using Lox.Expressions;
 using Lox.Statements;
 
-namespace Lox.Visitors.Interpreter;
+namespace Lox.Visitors.Interpreters;
 
-public class InterpreterVisitor : IVisitor<object>, IVisitor
+public class Interpreter : IVisitor<object>, IVisitor
 {
     private TextWriter _output;
-    public InterpreterVisitor(TextWriter? output)
+    public Interpreter(TextWriter? output)
     {
         _output = output ?? Console.Out;
     }
@@ -121,5 +121,5 @@ public class InterpreterVisitor : IVisitor<object>, IVisitor
 
     public void Visit(ExpressionStatement s) => s.Expression.Accept(this);
 
-    public void Visit(Print s) => _output.Write(s.Expression.Accept(this));
+    public void Visit(Print s) => _output.WriteLine(s.Expression.Accept(this));
 }

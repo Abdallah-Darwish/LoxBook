@@ -1,8 +1,7 @@
-using Lox.Expressions;
-using Lox.Statements;
-using Expression = Lox.Expressions.Expression;
+using Lox.Core;
+using Lox.Scanners;
 
-namespace Lox;
+namespace Lox.Parsers;
 
 public class Parser
 {
@@ -13,7 +12,41 @@ public class Parser
         _scanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
         _scanner.MoveNext();
     }
-    public Statement Parse() => ParseStatement();
+    public Statement Parse()
+    {
+        try
+        {
+            return ParseDeclaration();
+        }
+        catch (ParserException)
+        {
+            Synchronize();
+            throw;
+        }
+    }
+
+    public Statement ParseDeclaration()
+    {
+        return _scanner.Current.Type switch
+        {
+            TokenType.Var => ParseVariableDeclaration(),
+            _ => ParseStatement()
+        };
+    }
+    public VariableStatement ParseVariableDeclaration()
+    {
+        _scanner.GetAndMoveNext();
+
+        var id = _scanner.GetAndMoveNext(TokenType.Identifier);
+        Expression? init = null;
+        if (_scanner.Current.Type == TokenType.Equal)
+        {
+            _scanner.GetAndMoveNext();
+            init = ParseExpression();
+        }
+        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        return new(id, init);
+    }
     public Statement ParseStatement()
     {
         Statement statement = _scanner.Current.Type switch
@@ -21,13 +54,7 @@ public class Parser
             TokenType.Print => ParsePrint(),
             _ => ParseExpressionStatement()
         };
-        if (_scanner.Current.Type != TokenType.Semicolon)
-        {
-            throw new ParserException(
-                $"Expected a token of type {TokenType.Semicolon} instead found token of type {_scanner.Current.Type}",
-                _scanner.Current);
-        }
-        _scanner.GetAndMoveNext();
+        _scanner.GetAndMoveNext(TokenType.Semicolon);
         return statement;
     }
 
@@ -60,19 +87,12 @@ public class Parser
             return condition;
         }
 
-        var questionMark = _scanner.GetAndMoveNext();
+        _scanner.GetAndMoveNext();
         var left = ParseEquality();
-        if (_scanner.Current.Type != TokenType.Colon)
-        {
-            throw new ParserException(
-                $"Expected a token of type {TokenType.Colon} instead found token of type {_scanner.Current.Type}",
-                _scanner.Current);
-        }
-
-        var colon = _scanner.GetAndMoveNext();
+        _scanner.GetAndMoveNext(TokenType.Colon);
 
         var right = ParseEquality();
-        return new Ternary(condition, questionMark, left, colon, right);
+        return new Ternary(condition, left, right);
     }
 
 
@@ -143,24 +163,15 @@ public class Parser
         {
             return new Literal(_scanner.GetAndMoveNext());
         }
-
-        if (_scanner.Current.Type != TokenType.LeftParentheses)
+        if (_scanner.Current.Type == TokenType.Identifier)
         {
-            throw new ParserException(
-                $"Expected a token of type {TokenType.LeftParentheses} instead found token of type {_scanner.Current.Type}",
-                _scanner.Current);
+            return new Variable(_scanner.GetAndMoveNext());
         }
 
-        _scanner.MoveNext();
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
         var expr = ParseExpression();
-        if (_scanner.Current.Type != TokenType.RightParentheses)
-        {
-            throw new ParserException(
-                $"Expected a token of type {TokenType.RightParentheses} instead found token of type {_scanner.Current.Type}",
-                _scanner.Current);
-        }
+        _scanner.GetAndMoveNext(TokenType.RightParentheses);
 
-        _scanner.MoveNext();
         return new Grouping(expr);
     }
 

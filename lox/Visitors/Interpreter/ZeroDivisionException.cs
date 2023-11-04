@@ -1,5 +1,5 @@
 using Expression = Lox.Expressions.Expression;
-namespace Lox.Visitors.Interpreter;
+namespace Lox.Visitors.Interpreters;
 
 [Serializable]
 public class ZeroDivisionException : RuntimeException

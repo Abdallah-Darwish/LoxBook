@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace Lox;
+namespace Lox.Core;
 
 public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
 {

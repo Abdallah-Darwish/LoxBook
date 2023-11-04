@@ -1,4 +1,4 @@
-namespace Lox;
+namespace Lox.Scanners;
 
 public class ScannerException : Exception
 {

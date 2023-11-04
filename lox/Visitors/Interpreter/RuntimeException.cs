@@ -1,4 +1,4 @@
-namespace Lox;
+namespace Lox.Visitors.Interpreters;
 [Serializable]
 public class RuntimeException : Exception
 {
