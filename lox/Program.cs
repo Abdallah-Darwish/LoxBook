@@ -1,6 +1,5 @@
-﻿using Lox;
-using Lox.Expressions;
-using Lox.Visitors.Interpreter;
+﻿using Lox.Scanners;
+using Lox.Visitors;
 string x = """"
 print "hhe"
 """";

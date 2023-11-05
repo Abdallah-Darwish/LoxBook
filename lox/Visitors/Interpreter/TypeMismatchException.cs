@@ -1,7 +1,7 @@
-using Expression = Lox.Expressions.Expression;
+using Lox.Core;
 namespace Lox.Visitors.Interpreters;
 
-[Serializable]
+
 public class TypeMismatchException : RuntimeException
 {
     public Type[] ExpectedTypes { get; }
@@ -17,7 +17,4 @@ public class TypeMismatchException : RuntimeException
         ActualType = actualValue?.GetType();
         SourceExpression = source;
     }
-    protected TypeMismatchException(
-        System.Runtime.Serialization.SerializationInfo info,
-        System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
 }

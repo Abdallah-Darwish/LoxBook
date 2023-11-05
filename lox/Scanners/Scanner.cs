@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Collections.Immutable;
 using System.Text;
-using Lox.Parsers;
 using Lox.Core;
+using Lox.Parsers;
 
 namespace Lox.Scanners;
 
-public class Scanner : IEnumerator<Token>
+public class Scanner : IScanner
 {
-    private TextReader _source;
+    private readonly TextReader _source;
 
     public Scanner(TextReader source)
     {
@@ -261,7 +261,7 @@ public class Scanner : IEnumerator<Token>
         var current = Current;
         if (current.Type != expectedType)
         {
-            throw new ParserException($"Expected a token of type {TokenType.RightParentheses} instead found token of type {Current.Type}", Current);
+            throw new UnexpectedTokenException(current, expectedType);
         }
         MoveNext();
         return current;

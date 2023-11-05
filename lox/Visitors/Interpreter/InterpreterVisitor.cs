@@ -1,10 +1,8 @@
 using System.Collections;
-using Lox.Expressions;
-using Lox.Statements;
-
+using Lox.Core;
 namespace Lox.Visitors.Interpreters;
 
-public class Interpreter : IVisitor<object>, IVisitor
+public class Interpreter : IExpressionVisitor<object>, IStatementVisitor
 {
     private TextWriter _output;
     public Interpreter(TextWriter? output)

@@ -1,7 +1,6 @@
-using Expression = Lox.Expressions.Expression;
+using Lox.Core;
 namespace Lox.Visitors.Interpreters;
 
-[Serializable]
 public class ZeroDivisionException : RuntimeException
 {
     public double Left { get; }
@@ -14,7 +13,4 @@ public class ZeroDivisionException : RuntimeException
         Right = right;
         SourceExpression = source;
     }
-    protected ZeroDivisionException(
-        System.Runtime.Serialization.SerializationInfo info,
-        System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
 }

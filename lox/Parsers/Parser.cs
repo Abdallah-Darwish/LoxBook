@@ -3,11 +3,11 @@ using Lox.Scanners;
 
 namespace Lox.Parsers;
 
-public class Parser
+public class Parser : IParser
 {
-    private readonly Scanner _scanner;
+    private readonly IScanner _scanner;
 
-    public Parser(Scanner scanner)
+    public Parser(IScanner scanner)
     {
         _scanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
         _scanner.MoveNext();
@@ -25,7 +25,7 @@ public class Parser
         }
     }
 
-    public Statement ParseDeclaration()
+    private Statement ParseDeclaration()
     {
         return _scanner.Current.Type switch
         {
@@ -33,7 +33,7 @@ public class Parser
             _ => ParseStatement()
         };
     }
-    public VariableStatement ParseVariableDeclaration()
+    private VariableStatement ParseVariableDeclaration()
     {
         _scanner.GetAndMoveNext();
 
@@ -47,7 +47,7 @@ public class Parser
         _scanner.GetAndMoveNext(TokenType.Semicolon);
         return new(id, init);
     }
-    public Statement ParseStatement()
+    private Statement ParseStatement()
     {
         Statement statement = _scanner.Current.Type switch
         {
@@ -58,8 +58,8 @@ public class Parser
         return statement;
     }
 
-    public ExpressionStatement ParseExpressionStatement() => new(ParseExpression());
-    public Print ParsePrint()
+    private ExpressionStatement ParseExpressionStatement() => new(ParseExpression());
+    private Print ParsePrint()
     {
         _scanner.GetAndMoveNext();
         return new Print(ParseExpression());

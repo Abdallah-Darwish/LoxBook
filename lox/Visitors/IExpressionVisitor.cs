@@ -2,12 +2,12 @@ using Lox.Core;
 
 namespace Lox.Visitors;
 
-public interface IVisitor<T>
+public interface IExpressionVisitor<T>
 {
-	T Visit(Ternary s);
-	T Visit(Binary s);
-	T Visit(Grouping s);
-	T Visit(Literal s);
-	T Visit(Unary s);
-	T Visit(Variable s);
+	T Visit(Ternary e);
+	T Visit(Binary e);
+	T Visit(Grouping e);
+	T Visit(Literal e);
+	T Visit(Unary e);
+	T Visit(Variable e);
 }

@@ -1,8 +1,23 @@
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Callable
+from enum import Enum, auto
 
 BASE_NAMESPACE = 'Lox'
 BASE_PLACEHOLDER = '$base$'
+
+class VisitorVariant(Enum):
+    TYPED = auto()
+    NOT_TYPED = auto()
+    ALL = auto()
+
+    def call_method(self, m: Callable, *args, **kwargs) -> str:
+        return "\n".join([m(*args, **{**kwargs, 'visitor_variant':VisitorVariant.NOT_TYPED }), m(*args, **{**kwargs, 'visitor_variant':VisitorVariant.TYPED })]) if self == VisitorVariant.ALL else m(*args, **{**kwargs, 'visitor_variant':self })
+    
+    def get_return_type(self):
+        return 'T' if self == VisitorVariant.TYPED else 'void'
+    
+    def get_type_argument(self):
+        return '<T>' if self == VisitorVariant.TYPED else ''
 
 def make_namespace(s: str) -> str:
     return f'{BASE_NAMESPACE}.{s}'
@@ -18,39 +33,56 @@ class SyntaxNode:
             tuple(j.strip() for j in i.split()) for i in self.types.split(",")
         ]
 
-    def generate_definition(self, base_name: str, is_visitor_typed: bool):
+    @staticmethod
+    def _generate_accept_method(*, base_name: str, visitor_variant: VisitorVariant) -> str:
+        assert visitor_variant != VisitorVariant.ALL
+        return f"\tpublic override {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{base_name}Visitor{visitor_variant.get_type_argument()} visitor) => visitor.Visit(this);"
+
+    def generate_definition(self, base_name: str, visitor_variant: VisitorVariant):
         types_str = ", ".join(f"{t[0]} {t[1]}" for t in self.types)
+        accept_str = visitor_variant.call_method(SyntaxNode._generate_accept_method, base_name=base_name)
         return f"""
 public record class {self.name}({types_str}) : {base_name}
 {{
-    public override {'T' if is_visitor_typed else 'void'} Accept{'<T>' if is_visitor_typed else ''}(IVisitor{'<T>' if is_visitor_typed else ''} visitor) => visitor.Visit(this);
+{accept_str}
 }}
 """
-    def generate_visitor_method(self, is_visitor_typed: bool):
-        var_name = 'e' if 'expr' in self.name.lower() else 's'
-        return f"\t{'T' if is_visitor_typed else 'void'} Visit({self.name} {var_name});"
+    
+    def _generate_visit_method(self, *, visitor_variant: VisitorVariant) -> str:
+        assert visitor_variant != VisitorVariant.ALL
+        var_name = 's' if 'statement' in self.name.lower() else 'e'
+        return f"\t{visitor_variant.get_return_type()} Visit({self.name} {var_name});"
+
+    def generate_visit_method(self, visitor_variant: VisitorVariant):
+        return visitor_variant.call_method(self._generate_visit_method)
+        
 
 class Ast:
     namespace: str
     base_name: str
     nodes: List[SyntaxNode]
-    is_visitor_typed: bool
+    visitor_variant: VisitorVariant
     definition_additional_namespaces: List[str] | None
 
-    def __init__(self, namespace: str, base_name: str, definition: str, is_visitor_typed: bool, definition_additional_namespaces: List[str] | None = None):
+    def __init__(self, namespace: str, base_name: str, definition: str, visitor_variant: VisitorVariant, definition_additional_namespaces: List[str] | None = None):
         self.namespace, self.base_name = namespace, base_name
         self.nodes = [SyntaxNode(l) for l in definition.replace(BASE_PLACEHOLDER, base_name).splitlines() if l.strip()]
-        self.is_visitor_typed = is_visitor_typed
+        self.visitor_variant = visitor_variant
         self.definition_additional_namespaces = definition_additional_namespaces
 
+    def _generate_base_visit_method(self, *, visitor_variant: VisitorVariant):
+        assert visitor_variant != VisitorVariant.ALL
+        return f"public abstract {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{self.base_name}Visitor{visitor_variant.get_type_argument()} visitor);"
+
     def _generate_base_definition(self):
+        accept_str = self.visitor_variant.call_method(self._generate_base_visit_method)
         return f"""public abstract record class {self.base_name}()
 {{
-    public abstract {'T' if self.is_visitor_typed else 'void'} Accept{'<T>' if self.is_visitor_typed else ''}(IVisitor{'<T>' if self.is_visitor_typed else ''} visitor);
+{accept_str}
 }}"""
 
     def generate_definition(self):
-        ast = "".join(e.generate_definition(self.base_name, self.is_visitor_typed) for e in self.nodes)
+        ast = "".join(e.generate_definition(self.base_name, self.visitor_variant) for e in self.nodes)
         additional_usings = '\n'.join([f'using {ns};' for ns in self.definition_additional_namespaces]) + '\n' if self.definition_additional_namespaces else ''
         return f"""{additional_usings}using {make_namespace('Visitors')};
 
@@ -65,17 +97,21 @@ namespace {make_namespace(self.namespace)};
             fs.write(self.generate_definition())
             fs.flush()
 
+    def _generate_visitor_interface(self, *, visitor_variant: VisitorVariant) -> str:
+        visiting_methods = "\n".join(e.generate_visit_method(visitor_variant) for e in self.nodes)
+        return f"""public interface I{self.base_name}Visitor{visitor_variant.get_type_argument()}
+{{
+{visiting_methods}
+}}"""
+
     def generate_visitor_interface(self) -> str:
-        visiting_methods = "\n".join(e.generate_visitor_method(self.is_visitor_typed) for e in self.nodes)
+        interfaces_str = self.visitor_variant.call_method(self._generate_visitor_interface)
+        
         return f"""using {make_namespace(self.namespace)};
 
 namespace {make_namespace('Visitors')};
 
-public interface IVisitor{'<T>' if self.is_visitor_typed else ''}
-{{
-{visiting_methods}
-}}
-"""
+{interfaces_str}"""
     
     def save_visitor_interface(self, p: Path):
         with open(p, "w") as fs:
@@ -95,14 +131,14 @@ Literal  : Token Value
 Unary    : Token Operator, $base$ Right
 Variable : Token Name
 """
-expressions = Ast('Core', 'Expression', expressions_ast_txt, True)
+expressions = Ast('Core', 'Expression', expressions_ast_txt, VisitorVariant.TYPED)
 
 statements_ast_txt = """
 ExpressionStatement : Expression Expression
 Print               : Expression Expression
 VariableStatement   : Token Name, Expression? Initializer
 """
-statements = Ast('Core', 'Statement', statements_ast_txt, False)
+statements = Ast('Core', 'Statement', statements_ast_txt, VisitorVariant.ALL)
 
 expressions.save_definition_and_visitor()
 statements.save_definition_and_visitor()
