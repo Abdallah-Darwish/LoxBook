@@ -1,5 +1,5 @@
 namespace Lox.Visitors.Interpreters;
-public class RuntimeException : Exception
+public class RuntimeException : LoxException
 {
     public RuntimeException() { }
     public RuntimeException(string message) : base(message) { }

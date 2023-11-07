@@ -1,6 +1,6 @@
 namespace Lox.Scanners;
 
-public class ScannerException : Exception
+public class ScannerException : LoxException
 {
     public int Line { get; }
     public int Column { get; }
