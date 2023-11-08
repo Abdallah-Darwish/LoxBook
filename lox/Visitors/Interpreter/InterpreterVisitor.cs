@@ -1,15 +1,18 @@
 using System.Collections;
 using Lox.Core;
+using Lox.Visitors.Interpreters.Environemnts;
 namespace Lox.Visitors.Interpreters;
 
-public class Interpreter : IExpressionVisitor<object>, IStatementVisitor
+public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 {
-    private TextWriter _output;
-    public Interpreter(TextWriter? output)
+    private readonly TextWriter _output;
+    private readonly IEnvironment _environment;
+    public Interpreter(IEnvironment environment, TextWriter? output)
     {
         _output = output ?? Console.Out;
+        _environment = environment;
     }
-    private bool IsTruthy(object? obj)
+    private static bool IsTruthy(object? obj)
     {
         if (obj is null) return false;
         if (obj is bool b) return b;
@@ -25,7 +28,7 @@ public class Interpreter : IExpressionVisitor<object>, IStatementVisitor
         }
         return dr;
     }
-    private IComparer GetComparer(Type t)
+    private static IComparer GetComparer(Type t)
     {
         if (t == typeof(string)) { return StringComparer.Ordinal; }
         if (t == typeof(double)) { return Comparer<double>.Default; }
@@ -33,7 +36,7 @@ public class Interpreter : IExpressionVisitor<object>, IStatementVisitor
     }
     private int Compare(Expression left, Expression right)
     {
-        object leftValue = left.Accept(this), rightValue = right.Accept(this);
+        object? leftValue = left.Accept(this), rightValue = right.Accept(this);
         if (leftValue is null && rightValue is null) { return 0; }
         if (leftValue is null) { return -1; }
         if (rightValue is null) { return 1; }
@@ -45,9 +48,9 @@ public class Interpreter : IExpressionVisitor<object>, IStatementVisitor
 
         return GetComparer(leftValue.GetType()).Compare(leftValue, rightValue);
     }
-    public object Visit(Ternary e) => IsTruthy(e.Condition) ? e.Left.Accept(this) : e.Right.Accept(this);
+    public object? Visit(Ternary e) => IsTruthy(e.Condition) ? e.Left.Accept(this) : e.Right.Accept(this);
 
-    public object Visit(Binary e)
+    public object? Visit(Binary e)
     {
         switch (e.Operator.Type)
         {
@@ -103,11 +106,11 @@ public class Interpreter : IExpressionVisitor<object>, IStatementVisitor
         };
     }
 
-    public object Visit(Grouping e) => e.Accept(this);
+    public object? Visit(Grouping e) => e.Accept(this);
 
-    public object Visit(Literal e) => e.Value.Value;
+    public object? Visit(Literal e) => e.Value.Value;
 
-    public object Visit(Unary e)
+    public object? Visit(Unary e)
     {
         return e.Operator.Type switch
         {
@@ -120,4 +123,11 @@ public class Interpreter : IExpressionVisitor<object>, IStatementVisitor
     public void Visit(ExpressionStatement s) => s.Expression.Accept(this);
 
     public void Visit(Print s) => _output.WriteLine(s.Expression.Accept(this));
+
+    public void Visit(VariableStatement s)
+    {
+        _environment.Define(s.Name, s.Initializer?.Accept(this));
+    }
+
+    public object? Visit(Variable e) => _environment.Get(e.Name);
 }
