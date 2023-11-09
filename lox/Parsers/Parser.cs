@@ -71,7 +71,7 @@ public class Parser : IParser
 
     private Expression ParseComma()
     {
-        var expr = ParseTernary();
+        var expr = ParseAssignment();
         while (_scanner.Current.Type == TokenType.Comma)
         {
             var com = _scanner.GetAndMoveNext();

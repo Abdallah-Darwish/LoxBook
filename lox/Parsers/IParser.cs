@@ -1,6 +1,6 @@
 using Lox.Core;
 
-interface IParser
+public interface IParser
 {
     Statement Parse();
 }

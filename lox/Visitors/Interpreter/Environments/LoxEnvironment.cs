@@ -24,7 +24,7 @@ public class LoxEnvironemnt : ILoxEnvironment
     }
     public bool TrySet(string id, object? value)
     {
-        if (_values.ContainsKey(id)) { return false; }
+        if (!_values.ContainsKey(id)) { return false; }
         _values[id] = value;
         return true;
     }

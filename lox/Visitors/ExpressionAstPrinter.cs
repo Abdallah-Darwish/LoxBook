@@ -3,16 +3,17 @@ using Lox.Core;
 
 namespace Lox.Visitors;
 
-public class AstPrinter : IExpressionVisitor<string>
+public class ExpressionAstPrinter : IExpressionVisitor<string>
 {
-    private string Parenthesize(string name, bool isStatement = false, Expression[]? expressions = null, Token[]? tokens = null)
+    private string Parenthesize(string name, Expression?[]? expressions = null, Token?[]? tokens = null)
     {
         StringBuilder sb = new();
-        sb.Append(isStatement ? '[' : '{').Append(name).Append(isStatement ? ']' : '}');
+        sb.Append("[ ").Append(name);
         if (expressions is not null && expressions.Length > 0)
         {
             foreach (var e in expressions)
             {
+                if (e is null) { continue; }
                 sb.Append(' ').Append(e.Accept(this));
             }
         }
@@ -20,10 +21,11 @@ public class AstPrinter : IExpressionVisitor<string>
         {
             foreach (var t in tokens)
             {
+                if (t is null) { continue; }
                 sb.Append(' ').Append(t.Text);
             }
         }
-        return sb.ToString();
+        return sb.Append(" ]").ToString();
     }
 
     public string Visit(TernaryExpression e) => Parenthesize("ternary", expressions: new[] { e.Condition, e.Left, e.Right });
