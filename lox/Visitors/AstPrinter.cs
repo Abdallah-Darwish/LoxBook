@@ -38,4 +38,5 @@ public class AstPrinter : IExpressionVisitor<string>
 
     public string Visit(VariableExpression e) => e.Name.Text;
 
+    public string Visit(AssignmentExpression e) => Parenthesize("=", tokens: new[] { e.Name }, expressions: new[] { e.Value });
 }

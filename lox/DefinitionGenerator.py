@@ -127,12 +127,13 @@ namespace {make_namespace('Visitors')};
         self.save_visitor_interface(d.joinpath("Visitors").joinpath(f"I{self.base_name}Visitor.cs"))
 
 expressions_ast_txt = """
-Ternary  : $base$ Condition, $base$ Left, $base$ Right
-Binary   : $base$ Left, Token Operator, $base$ Right
-Grouping : $base$ Expression
-Literal  : Token Value
-Unary    : Token Operator, $base$ Right
-Variable : Token Name
+Ternary     : $base$ Condition, $base$ Left, $base$ Right
+Binary      : $base$ Left, Token Operator, $base$ Right
+Grouping    : $base$ Expression
+Literal     : Token Value
+Unary       : Token Operator, $base$ Right
+Variable    : Token Name
+Assignment  : Token Name, $base$ Value
 """
 expressions = Ast('Core', 'Expression', expressions_ast_txt, VisitorVariant.TYPED)
 

@@ -1,5 +1,6 @@
 using Lox.Core;
 using Lox.Scanners;
+using Lox.Visitors;
 
 namespace Lox.Parsers;
 
@@ -58,12 +59,13 @@ public class Parser : IParser
         return statement;
     }
 
-    private ExpressionStatement ParseExpressionStatement() => new(ParseExpression());
     private PrintStatement ParsePrint()
     {
         _scanner.GetAndMoveNext();
         return new PrintStatement(ParseExpression());
     }
+
+    private ExpressionStatement ParseExpressionStatement() => new(ParseExpression());
 
     private Expression ParseExpression() => ParseComma();
 
@@ -77,6 +79,23 @@ public class Parser : IParser
         }
 
         return expr;
+    }
+
+    private Expression ParseAssignment()
+    {
+        var name = ParseTernary();
+        if (_scanner.Current.Type != TokenType.Equal)
+        {
+            return name;
+        }
+        if (name is not VariableExpression varExpr)
+        {
+            throw new ParserException($"Expected a expression of type {nameof(VariableExpression)} instead found {name.GetType().Name}", _scanner.Current);
+        }
+        _scanner.GetAndMoveNext();
+
+        var val = ParseAssignment();
+        return new AssignmentExpression(varExpr.Name, val);
     }
 
     private Expression ParseTernary()

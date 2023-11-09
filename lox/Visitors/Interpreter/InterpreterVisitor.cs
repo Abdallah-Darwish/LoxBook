@@ -6,8 +6,8 @@ namespace Lox.Visitors.Interpreters;
 public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 {
     private readonly TextWriter _output;
-    private readonly IEnvironment _environment;
-    public Interpreter(IEnvironment environment, TextWriter? output)
+    private readonly ILoxEnvironment _environment;
+    public Interpreter(ILoxEnvironment environment, TextWriter? output)
     {
         _output = output ?? Console.Out;
         _environment = environment;
@@ -130,4 +130,11 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
     }
 
     public object? Visit(VariableExpression e) => _environment.Get(e.Name);
+
+    public object? Visit(AssignmentExpression e)
+    {
+        var val = e.Value.Accept(this);
+        _environment.Set(e.Name, val);
+        return val;
+    }
 }

@@ -2,7 +2,7 @@ using Lox.Core;
 
 namespace Lox.Visitors.Interpreters.Environemnts;
 
-public class Environemnt : IEnvironment
+public class LoxEnvironemnt : ILoxEnvironment
 {
     private readonly Dictionary<string, object?> _values = new();
     public bool TryDefine(string name, object? value) => _values.TryAdd(name, value);

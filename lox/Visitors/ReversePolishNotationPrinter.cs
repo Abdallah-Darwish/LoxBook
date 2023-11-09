@@ -13,5 +13,7 @@ public class ReversePolishNotationPrinter : IExpressionVisitor<string>
 
     public string Visit(UnaryExpression e) => $"{e.Right.Accept(this)} {(e.Operator.Text == "-" ? "~" : e.Operator.Text)}";
 
-    public string Visit(VariableExpression e) => e.Name.Text;
+    public string Visit(VariableExpression e) => e.Name.Lexeme;
+
+    public string Visit(AssignmentExpression e) => $"{e.Value.Accept(this)} {e.Name.Lexeme} =";
 }
