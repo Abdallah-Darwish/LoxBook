@@ -42,7 +42,7 @@ class SyntaxNode:
         types_str = ", ".join(f"{t[0]} {t[1]}" for t in self.types)
         accept_str = visitor_variant.call_method(SyntaxNode._generate_accept_method, base_name=base_name)
         return f"""
-public record class {self.name}({types_str}) : {base_name}
+public record class {self.name}{base_name}({types_str}) : {base_name}
 {{
 {accept_str}
 }}
@@ -134,9 +134,9 @@ Variable : Token Name
 expressions = Ast('Core', 'Expression', expressions_ast_txt, VisitorVariant.TYPED)
 
 statements_ast_txt = """
-ExpressionStatement : Expression Expression
-Print               : Expression Expression
-VariableStatement   : Token Name, Expression? Initializer
+Expression : Expression Expression
+Print      : Expression Expression
+Variable   : Token Name, Expression? Initializer
 """
 statements = Ast('Core', 'Statement', statements_ast_txt, VisitorVariant.ALL)
 

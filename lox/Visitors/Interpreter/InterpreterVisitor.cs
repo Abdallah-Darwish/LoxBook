@@ -48,9 +48,9 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 
         return GetComparer(leftValue.GetType()).Compare(leftValue, rightValue);
     }
-    public object? Visit(Ternary e) => IsTruthy(e.Condition) ? e.Left.Accept(this) : e.Right.Accept(this);
+    public object? Visit(TernaryExpression e) => IsTruthy(e.Condition) ? e.Left.Accept(this) : e.Right.Accept(this);
 
-    public object? Visit(Binary e)
+    public object? Visit(BinaryExpression e)
     {
         switch (e.Operator.Type)
         {
@@ -102,32 +102,32 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
                 e.Left.Accept(this);
                 return e.Right.Accept(this);
             default:
-                throw new InvalidOperationException($"Unsupported operator {e.Operator.Type} type for {nameof(Binary)}");
+                throw new InvalidOperationException($"Unsupported operator {e.Operator.Type} type for {nameof(BinaryExpression)}");
         };
     }
 
-    public object? Visit(Grouping e) => e.Accept(this);
+    public object? Visit(GroupingExpression e) => e.Accept(this);
 
-    public object? Visit(Literal e) => e.Value.Value;
+    public object? Visit(LiteralExpression e) => e.Value.Value;
 
-    public object? Visit(Unary e)
+    public object? Visit(UnaryExpression e)
     {
         return e.Operator.Type switch
         {
             TokenType.Minus => -AsDouble(e.Right),
             TokenType.Bang => !IsTruthy(e.Right),
-            _ => throw new InvalidOperationException($"Unsupported operator {e.Operator.Type} type for {nameof(Unary)}"),
+            _ => throw new InvalidOperationException($"Unsupported operator {e.Operator.Type} type for {nameof(UnaryExpression)}"),
         };
     }
 
     public void Visit(ExpressionStatement s) => s.Expression.Accept(this);
 
-    public void Visit(Print s) => _output.WriteLine(s.Expression.Accept(this));
+    public void Visit(PrintStatement s) => _output.WriteLine(s.Expression.Accept(this));
 
     public void Visit(VariableStatement s)
     {
         _environment.Define(s.Name, s.Initializer?.Accept(this));
     }
 
-    public object? Visit(Variable e) => _environment.Get(e.Name);
+    public object? Visit(VariableExpression e) => _environment.Get(e.Name);
 }

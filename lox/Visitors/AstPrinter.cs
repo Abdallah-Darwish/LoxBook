@@ -26,16 +26,16 @@ public class AstPrinter : IExpressionVisitor<string>
         return sb.ToString();
     }
 
-    public string Visit(Ternary e) => Parenthesize("ternary", expressions: new[] { e.Condition, e.Left, e.Right });
+    public string Visit(TernaryExpression e) => Parenthesize("ternary", expressions: new[] { e.Condition, e.Left, e.Right });
 
-    public string Visit(Binary e) => Parenthesize(e.Operator.Text, expressions: new[] { e.Left, e.Right });
+    public string Visit(BinaryExpression e) => Parenthesize(e.Operator.Text, expressions: new[] { e.Left, e.Right });
 
-    public string Visit(Grouping e) => Parenthesize("group", expressions: new[] { e.Expression });
+    public string Visit(GroupingExpression e) => Parenthesize("group", expressions: new[] { e.Expression });
 
-    public string Visit(Literal e) => e.Value.Text;
+    public string Visit(LiteralExpression e) => e.Value.Text;
 
-    public string Visit(Unary e) => Parenthesize(e.Operator.Text, expressions: new[] { e.Right });
+    public string Visit(UnaryExpression e) => Parenthesize(e.Operator.Text, expressions: new[] { e.Right });
 
-    public string Visit(Variable e) => e.Name.Text;
+    public string Visit(VariableExpression e) => e.Name.Text;
 
 }

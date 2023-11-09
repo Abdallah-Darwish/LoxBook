@@ -59,10 +59,10 @@ public class Parser : IParser
     }
 
     private ExpressionStatement ParseExpressionStatement() => new(ParseExpression());
-    private Print ParsePrint()
+    private PrintStatement ParsePrint()
     {
         _scanner.GetAndMoveNext();
-        return new Print(ParseExpression());
+        return new PrintStatement(ParseExpression());
     }
 
     private Expression ParseExpression() => ParseComma();
@@ -73,7 +73,7 @@ public class Parser : IParser
         while (_scanner.Current.Type == TokenType.Comma)
         {
             var com = _scanner.GetAndMoveNext();
-            expr = new Binary(expr, com, ParseTernary());
+            expr = new BinaryExpression(expr, com, ParseTernary());
         }
 
         return expr;
@@ -92,7 +92,7 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.Colon);
 
         var right = ParseEquality();
-        return new Ternary(condition, left, right);
+        return new TernaryExpression(condition, left, right);
     }
 
 
@@ -102,7 +102,7 @@ public class Parser : IParser
         while (_scanner.Current.Type is TokenType.BangEqual or TokenType.EqualEqual)
         {
             var op = _scanner.GetAndMoveNext();
-            expr = new Binary(expr, op, ParseComparison());
+            expr = new BinaryExpression(expr, op, ParseComparison());
         }
 
         return expr;
@@ -115,7 +115,7 @@ public class Parser : IParser
                or TokenType.LessEqual)
         {
             var op = _scanner.GetAndMoveNext();
-            expr = new Binary(expr, op, ParseTerm());
+            expr = new BinaryExpression(expr, op, ParseTerm());
         }
 
         return expr;
@@ -127,7 +127,7 @@ public class Parser : IParser
         while (_scanner.Current.Type is TokenType.Plus or TokenType.Minus)
         {
             var op = _scanner.GetAndMoveNext();
-            expr = new Binary(expr, op, ParseFactor());
+            expr = new BinaryExpression(expr, op, ParseFactor());
         }
 
         return expr;
@@ -139,7 +139,7 @@ public class Parser : IParser
         while (_scanner.Current.Type is TokenType.Slash or TokenType.Star)
         {
             var op = _scanner.GetAndMoveNext();
-            expr = new Binary(expr, op, ParseUnary());
+            expr = new BinaryExpression(expr, op, ParseUnary());
         }
 
         return expr;
@@ -150,7 +150,7 @@ public class Parser : IParser
         if (_scanner.Current.Type is TokenType.Bang or TokenType.Minus)
         {
             var op = _scanner.GetAndMoveNext();
-            return new Unary(op, ParseUnary());
+            return new UnaryExpression(op, ParseUnary());
         }
 
         return ParsePrimary();
@@ -161,18 +161,18 @@ public class Parser : IParser
         if (_scanner.Current.Type is TokenType.Number or TokenType.String or TokenType.True or TokenType.False
             or TokenType.Nil)
         {
-            return new Literal(_scanner.GetAndMoveNext());
+            return new LiteralExpression(_scanner.GetAndMoveNext());
         }
         if (_scanner.Current.Type == TokenType.Identifier)
         {
-            return new Variable(_scanner.GetAndMoveNext());
+            return new VariableExpression(_scanner.GetAndMoveNext());
         }
 
         _scanner.GetAndMoveNext(TokenType.LeftParentheses);
         var expr = ParseExpression();
         _scanner.GetAndMoveNext(TokenType.RightParentheses);
 
-        return new Grouping(expr);
+        return new GroupingExpression(expr);
     }
 
     private void Synchronize()

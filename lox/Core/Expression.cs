@@ -4,35 +4,35 @@ namespace Lox.Core;
 
 public abstract record class Expression()
 {
-public abstract T Accept<T>(IExpressionVisitor<T> visitor);
+	public abstract T Accept<T>(IExpressionVisitor<T> visitor);
 }
 
-public record class Ternary(Expression Condition, Expression Left, Expression Right) : Expression
+public record class TernaryExpression(Expression Condition, Expression Left, Expression Right) : Expression
 {
 	public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
 
-public record class Binary(Expression Left, Token Operator, Expression Right) : Expression
+public record class BinaryExpression(Expression Left, Token Operator, Expression Right) : Expression
 {
 	public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
 
-public record class Grouping(Expression Expression) : Expression
+public record class GroupingExpression(Expression Expression) : Expression
 {
 	public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
 
-public record class Literal(Token Value) : Expression
+public record class LiteralExpression(Token Value) : Expression
 {
 	public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
 
-public record class Unary(Token Operator, Expression Right) : Expression
+public record class UnaryExpression(Token Operator, Expression Right) : Expression
 {
 	public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
 
-public record class Variable(Token Name) : Expression
+public record class VariableExpression(Token Name) : Expression
 {
 	public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }

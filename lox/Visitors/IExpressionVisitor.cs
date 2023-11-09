@@ -4,10 +4,10 @@ namespace Lox.Visitors;
 
 public interface IExpressionVisitor<T>
 {
-	T Visit(Ternary e);
-	T Visit(Binary e);
-	T Visit(Grouping e);
-	T Visit(Literal e);
-	T Visit(Unary e);
-	T Visit(Variable e);
+	T Visit(TernaryExpression e);
+	T Visit(BinaryExpression e);
+	T Visit(GroupingExpression e);
+	T Visit(LiteralExpression e);
+	T Visit(UnaryExpression e);
+	T Visit(VariableExpression e);
 }
