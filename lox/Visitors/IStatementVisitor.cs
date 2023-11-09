@@ -5,12 +5,12 @@ namespace Lox.Visitors;
 public interface IStatementVisitor
 {
 	void Visit(ExpressionStatement s);
-	void Visit(PrintStatement e);
+	void Visit(PrintStatement s);
 	void Visit(VariableStatement s);
 }
 public interface IStatementVisitor<T>
 {
 	T Visit(ExpressionStatement s);
-	T Visit(PrintStatement e);
+	T Visit(PrintStatement s);
 	T Visit(VariableStatement s);
 }

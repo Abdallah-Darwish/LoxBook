@@ -24,25 +24,28 @@ def make_namespace(s: str) -> str:
 
 class SyntaxNode:
     name: str
+    base_name: str
     types: List[Tuple[str, str]]
+    class_name: str
 
-    def __init__(self, definition: str):
+    def __init__(self, definition: str, base_name: str):
         self.name, self.types = definition.strip().split(":")
         self.name = self.name.strip()
         self.types = [
             tuple(j.strip() for j in i.split()) for i in self.types.split(",")
         ]
+        self.base_name = base_name
+        self.class_name = f'{self.name}{self.base_name}'
 
-    @staticmethod
-    def _generate_accept_method(*, base_name: str, visitor_variant: VisitorVariant) -> str:
+    def _generate_accept_method(self, *, visitor_variant: VisitorVariant) -> str:
         assert visitor_variant != VisitorVariant.ALL
-        return f"\tpublic override {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{base_name}Visitor{visitor_variant.get_type_argument()} visitor) => visitor.Visit(this);"
+        return f"\tpublic override {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{self.base_name}Visitor{visitor_variant.get_type_argument()} visitor) => visitor.Visit(this);"
 
-    def generate_definition(self, base_name: str, visitor_variant: VisitorVariant):
+    def generate_definition(self, visitor_variant: VisitorVariant):
         types_str = ", ".join(f"{t[0]} {t[1]}" for t in self.types)
-        accept_str = visitor_variant.call_method(SyntaxNode._generate_accept_method, base_name=base_name)
+        accept_str = visitor_variant.call_method(self._generate_accept_method)
         return f"""
-public record class {self.name}{base_name}({types_str}) : {base_name}
+public record class {self.class_name}({types_str}) : {self.base_name}
 {{
 {accept_str}
 }}
@@ -50,8 +53,8 @@ public record class {self.name}{base_name}({types_str}) : {base_name}
     
     def _generate_visit_method(self, *, visitor_variant: VisitorVariant) -> str:
         assert visitor_variant != VisitorVariant.ALL
-        var_name = 's' if 'statement' in self.name.lower() else 'e'
-        return f"\t{visitor_variant.get_return_type()} Visit({self.name} {var_name});"
+        var_name = 's' if 'statement' in self.class_name.lower() else 'e'
+        return f"\t{visitor_variant.get_return_type()} Visit({self.class_name} {var_name});"
 
     def generate_visit_method(self, visitor_variant: VisitorVariant):
         return visitor_variant.call_method(self._generate_visit_method)
@@ -65,14 +68,14 @@ class Ast:
     definition_additional_namespaces: List[str] | None
 
     def __init__(self, namespace: str, base_name: str, definition: str, visitor_variant: VisitorVariant, definition_additional_namespaces: List[str] | None = None):
-        self.namespace, self.base_name = namespace, base_name
-        self.nodes = [SyntaxNode(l) for l in definition.replace(BASE_PLACEHOLDER, base_name).splitlines() if l.strip()]
+        self.namespace, self.base_name = namespace, base_name.strip()
+        self.nodes = [SyntaxNode(l, self.base_name) for l in definition.replace(BASE_PLACEHOLDER, self.base_name).splitlines() if l.strip()]
         self.visitor_variant = visitor_variant
         self.definition_additional_namespaces = definition_additional_namespaces
 
     def _generate_base_visit_method(self, *, visitor_variant: VisitorVariant):
         assert visitor_variant != VisitorVariant.ALL
-        return f"public abstract {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{self.base_name}Visitor{visitor_variant.get_type_argument()} visitor);"
+        return f"\tpublic abstract {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{self.base_name}Visitor{visitor_variant.get_type_argument()} visitor);"
 
     def _generate_base_definition(self):
         accept_str = self.visitor_variant.call_method(self._generate_base_visit_method)
@@ -82,7 +85,7 @@ class Ast:
 }}"""
 
     def generate_definition(self):
-        ast = "".join(e.generate_definition(self.base_name, self.visitor_variant) for e in self.nodes)
+        ast = "".join(e.generate_definition(self.visitor_variant) for e in self.nodes)
         additional_usings = '\n'.join([f'using {ns};' for ns in self.definition_additional_namespaces]) + '\n' if self.definition_additional_namespaces else ''
         return f"""{additional_usings}using {make_namespace('Visitors')};
 
