@@ -1,6 +1,5 @@
 using Lox.Core;
 using Lox.Scanners;
-using Lox.Visitors;
 
 namespace Lox.Parsers;
 
@@ -8,13 +7,19 @@ public class Parser : IParser
 {
     private readonly IScanner _scanner;
 
+    public bool IsExhausted => _scanner.IsExhausted;
+
     public Parser(IScanner scanner)
     {
         _scanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
         _scanner.MoveNext();
     }
-    public Statement Parse()
+    /// <summary>
+    /// Would return null when the underlying scanner is exhausted.
+    /// </summary>
+    public Statement? Parse()
     {
+        if (IsExhausted) { return null; }
         try
         {
             return ParseDeclaration();

@@ -42,10 +42,10 @@ namespace lox.Visitors
             _expressionVisitor = expressionVisitor;
         }
 
-        public void Visit(ExpressionStatement s) => Parenthesize(null, expressions: new [] { s.Expression });
+        public void Visit(ExpressionStatement s) => Parenthesize(null, expressions: new[] { s.Expression });
 
-        public void Visit(PrintStatement s) => Parenthesize("print", expressions: new [] { s.Expression });
+        public void Visit(PrintStatement s) => Parenthesize("print", expressions: new[] { s.Expression });
 
-        public void Visit(VariableStatement s) => Parenthesize("=", expressions: new[] { s.Initializer }, tokens: new[] {s.Name});
+        public void Visit(VariableStatement s) => Parenthesize("var", expressions: new[] { s.Initializer }, tokens: new[] { s.Name });
     }
 }

@@ -19,18 +19,13 @@ public class ParserAdapter
     }
     public void Visit()
     {
-        try {
-            while (true)
+        for (var expr = _parser.Parse(); expr is not null; expr = _parser.Parse())
+        {
+            foreach (var visitor in _visitors)
             {
-                var exp = _parser.Parse();
-                foreach (var visitor in _visitors)
-                {
-                    exp.Accept(visitor);
-                }
+                expr.Accept(visitor);
             }
         }
-        catch (ScannerException ex) when (ex.Message.Contains("disposed or not started") && ex is { Line : 0, Column : 0})
-        {}
     }
 }
 

@@ -2,5 +2,6 @@ using Lox.Core;
 
 public interface IParser
 {
-    Statement Parse();
+    bool IsExhausted { get; }
+    Statement? Parse();
 }
