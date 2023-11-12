@@ -141,6 +141,7 @@ statements_ast_txt = """
 Expression : Expression Expression
 Print      : Expression Expression
 Variable   : Token Name, Expression? Initializer
+Block      : IReadOnlyList<$base$> Statements
 """
 statements = Ast('Core', 'Statement', statements_ast_txt, VisitorVariant.ALL)
 

@@ -14,9 +14,7 @@ public class Parser : IParser
         _scanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
         _scanner.MoveNext();
     }
-    /// <summary>
-    /// Would return null when the underlying scanner is exhausted.
-    /// </summary>
+    /// <inheritdoc/>
     public Statement? Parse()
     {
         if (IsExhausted) { return null; }
