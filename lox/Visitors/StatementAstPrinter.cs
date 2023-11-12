@@ -8,14 +8,23 @@ namespace lox.Visitors
     {
         private readonly TextWriter _output;
         private readonly IExpressionVisitor<string> _expressionVisitor;
-        private void Parenthesize(string? name, Expression?[]? expressions = null, Token?[]? tokens = null)
+        private void Parenthesize(string? name, IEnumerable<Statement?>? statements = null, IEnumerable<Expression?>? expressions = null, IEnumerable<Token?>? tokens = null)
         {
             _output.Write('{');
             if (name is not null && !string.IsNullOrWhiteSpace(name))
             {
                 _output.Write(name);
             }
-            if (expressions is not null && expressions.Length > 0)
+            if (statements is not null)
+            {
+                foreach (var s in statements)
+                {
+                    if (s is null) { continue; }
+                    _output.Write(' ');
+                    s.Accept(this);
+                }
+            }
+            if (expressions is not null)
             {
                 foreach (var e in expressions)
                 {
@@ -24,7 +33,7 @@ namespace lox.Visitors
                     _output.Write(e.Accept(_expressionVisitor));
                 }
             }
-            if (tokens is not null && tokens.Length > 0)
+            if (tokens is not null)
             {
                 foreach (var t in tokens)
                 {
@@ -33,7 +42,11 @@ namespace lox.Visitors
                     _output.Write(t.Text);
                 }
             }
-            _output.WriteLine(" }");
+            if (name is not null && !char.IsWhiteSpace(name[^1]))
+            {
+                _output.Write(' ');
+            }
+            _output.WriteLine('}');
         }
 
         public StatementAstPrinter(IExpressionVisitor<string> expressionVisitor, TextWriter output)
@@ -47,5 +60,7 @@ namespace lox.Visitors
         public void Visit(PrintStatement s) => Parenthesize("print", expressions: new[] { s.Expression });
 
         public void Visit(VariableStatement s) => Parenthesize("var", expressions: new[] { s.Initializer }, tokens: new[] { s.Name });
+
+        public void Visit(BlockStatement s) => Parenthesize("block\n", statements: s.Statements);
     }
 }

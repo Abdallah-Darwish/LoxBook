@@ -137,4 +137,9 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
         _environment.Set(e.Name, val);
         return val;
     }
+
+    public void Visit(BlockStatement s)
+    {
+        throw new NotImplementedException();
+    }
 }

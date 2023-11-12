@@ -5,11 +5,11 @@ namespace Lox.Visitors;
 
 public class ExpressionAstPrinter : IExpressionVisitor<string>
 {
-    private string Parenthesize(string name, Expression?[]? expressions = null, Token?[]? tokens = null)
+    private string Parenthesize(string name, IEnumerable<Expression?>? expressions = null, IEnumerable<Token?>? tokens = null)
     {
         StringBuilder sb = new();
         sb.Append("[ ").Append(name);
-        if (expressions is not null && expressions.Length > 0)
+        if (expressions is not null)
         {
             foreach (var e in expressions)
             {
@@ -17,7 +17,7 @@ public class ExpressionAstPrinter : IExpressionVisitor<string>
                 sb.Append(' ').Append(e.Accept(this));
             }
         }
-        if (tokens is not null && tokens.Length > 0)
+        if (tokens is not null)
         {
             foreach (var t in tokens)
             {

@@ -25,3 +25,9 @@ public record class VariableStatement(Token Name, Expression? Initializer) : Sta
     public override void Accept(IStatementVisitor visitor) => visitor.Visit(this);
     public override T Accept<T>(IStatementVisitor<T> visitor) => visitor.Visit(this);
 }
+
+public record class BlockStatement(IReadOnlyList<Statement> Statements) : Statement
+{
+    public override void Accept(IStatementVisitor visitor) => visitor.Visit(this);
+    public override T Accept<T>(IStatementVisitor<T> visitor) => visitor.Visit(this);
+}
