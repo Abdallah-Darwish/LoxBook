@@ -1,6 +1,5 @@
 using Lox.Core;
 using Lox.Scanners;
-using Lox.Visitors;
 
 namespace Lox.Parsers;
 
@@ -8,13 +7,17 @@ public class Parser : IParser
 {
     private readonly IScanner _scanner;
 
+    public bool IsExhausted => _scanner.IsExhausted;
+
     public Parser(IScanner scanner)
     {
         _scanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
         _scanner.MoveNext();
     }
-    public Statement Parse()
+    /// <inheritdoc/>
+    public Statement? Parse()
     {
+        if (IsExhausted) { return null; }
         try
         {
             return ParseDeclaration();
@@ -36,7 +39,7 @@ public class Parser : IParser
     }
     private VariableStatement ParseVariableDeclaration()
     {
-        _scanner.GetAndMoveNext();
+        _scanner.GetAndMoveNext(TokenType.Var);
 
         var id = _scanner.GetAndMoveNext(TokenType.Identifier);
         Expression? init = null;
@@ -48,30 +51,43 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.Semicolon);
         return new(id, init);
     }
-    private Statement ParseStatement()
+    private Statement ParseStatement() => _scanner.Current.Type switch
     {
-        Statement statement = _scanner.Current.Type switch
+        TokenType.Print => ParsePrint(),
+        TokenType.LeftBrace => new BlockStatement(ParseBlock()),
+        _ => ParseExpressionStatement()
+    };
+    private IReadOnlyList<Statement> ParseBlock()
+    {
+        _scanner.GetAndMoveNext(TokenType.LeftBrace);
+        List<Statement> body = new();
+        while (_scanner.Current.Type != TokenType.RightBrace)
         {
-            TokenType.Print => ParsePrint(),
-            _ => ParseExpressionStatement()
-        };
-        _scanner.GetAndMoveNext(TokenType.Semicolon);
-        return statement;
+            body.Add(ParseDeclaration());
+        }
+        _scanner.GetAndMoveNext();
+        return body;
     }
-
     private PrintStatement ParsePrint()
     {
         _scanner.GetAndMoveNext();
-        return new PrintStatement(ParseExpression());
+        PrintStatement print = new(ParseExpression());
+        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        return print;
     }
 
-    private ExpressionStatement ParseExpressionStatement() => new(ParseExpression());
+    private ExpressionStatement ParseExpressionStatement()
+    {
+        ExpressionStatement expr = new(ParseExpression());
+        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        return expr;
+    }
 
     private Expression ParseExpression() => ParseComma();
 
     private Expression ParseComma()
     {
-        var expr = ParseTernary();
+        var expr = ParseAssignment();
         while (_scanner.Current.Type == TokenType.Comma)
         {
             var com = _scanner.GetAndMoveNext();

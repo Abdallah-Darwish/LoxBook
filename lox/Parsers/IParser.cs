@@ -1,6 +1,10 @@
 using Lox.Core;
 
-interface IParser
+public interface IParser
 {
-    Statement Parse();
+    bool IsExhausted { get; }
+    /// <summary>
+    /// Would return null when the underlying scanner is exhausted.
+    /// </summary>
+    Statement? Parse();
 }

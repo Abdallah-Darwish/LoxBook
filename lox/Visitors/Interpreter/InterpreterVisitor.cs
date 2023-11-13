@@ -7,9 +7,9 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 {
     private readonly TextWriter _output;
     private readonly ILoxEnvironment _environment;
-    public Interpreter(ILoxEnvironment environment, TextWriter? output)
+    public Interpreter(ILoxEnvironment environment, TextWriter output)
     {
-        _output = output ?? Console.Out;
+        _output = output;
         _environment = environment;
     }
     private static bool IsTruthy(object? obj)
@@ -122,7 +122,7 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 
     public void Visit(ExpressionStatement s) => s.Expression.Accept(this);
 
-    public void Visit(PrintStatement s) => _output.WriteLine(s.Expression.Accept(this));
+    public void Visit(PrintStatement s) => _output.WriteLine(s.Expression.Accept(this) ?? "$nil$");
 
     public void Visit(VariableStatement s) => _environment.Define(s.Name, s.Initializer is null ? Uninitialized.Instance : s.Initializer.Accept(this));
 
@@ -133,5 +133,10 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
         var val = e.Value.Accept(this);
         _environment.Set(e.Name, val);
         return val;
+    }
+
+    public void Visit(BlockStatement s)
+    {
+        throw new NotImplementedException();
     }
 }

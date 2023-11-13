@@ -4,7 +4,7 @@ from enum import Enum, auto
 
 BASE_NAMESPACE = 'Lox'
 BASE_PLACEHOLDER = '$base$'
-
+TAB = ' ' * 4
 class VisitorVariant(Enum):
     TYPED = auto()
     NOT_TYPED = auto()
@@ -39,7 +39,7 @@ class SyntaxNode:
 
     def _generate_accept_method(self, *, visitor_variant: VisitorVariant) -> str:
         assert visitor_variant != VisitorVariant.ALL
-        return f"\tpublic override {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{self.base_name}Visitor{visitor_variant.get_type_argument()} visitor) => visitor.Visit(this);"
+        return f"{TAB}public override {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{self.base_name}Visitor{visitor_variant.get_type_argument()} visitor) => visitor.Visit(this);"
 
     def generate_definition(self, visitor_variant: VisitorVariant):
         types_str = ", ".join(f"{t[0]} {t[1]}" for t in self.types)
@@ -54,7 +54,7 @@ public record class {self.class_name}({types_str}) : {self.base_name}
     def _generate_visit_method(self, *, visitor_variant: VisitorVariant) -> str:
         assert visitor_variant != VisitorVariant.ALL
         var_name = 's' if 'statement' in self.class_name.lower() else 'e'
-        return f"\t{visitor_variant.get_return_type()} Visit({self.class_name} {var_name});"
+        return f"{TAB}{visitor_variant.get_return_type()} Visit({self.class_name} {var_name});"
 
     def generate_visit_method(self, visitor_variant: VisitorVariant):
         return visitor_variant.call_method(self._generate_visit_method)
@@ -75,7 +75,7 @@ class Ast:
 
     def _generate_base_visit_method(self, *, visitor_variant: VisitorVariant):
         assert visitor_variant != VisitorVariant.ALL
-        return f"\tpublic abstract {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{self.base_name}Visitor{visitor_variant.get_type_argument()} visitor);"
+        return f"{TAB}public abstract {visitor_variant.get_return_type()} Accept{visitor_variant.get_type_argument()}(I{self.base_name}Visitor{visitor_variant.get_type_argument()} visitor);"
 
     def _generate_base_definition(self):
         accept_str = self.visitor_variant.call_method(self._generate_base_visit_method)
@@ -141,6 +141,7 @@ statements_ast_txt = """
 Expression : Expression Expression
 Print      : Expression Expression
 Variable   : Token Name, Expression? Initializer
+Block      : IReadOnlyList<$base$> Statements
 """
 statements = Ast('Core', 'Statement', statements_ast_txt, VisitorVariant.ALL)
 
