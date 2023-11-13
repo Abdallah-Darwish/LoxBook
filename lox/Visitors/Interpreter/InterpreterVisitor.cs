@@ -124,10 +124,7 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 
     public void Visit(PrintStatement s) => _output.WriteLine(s.Expression.Accept(this));
 
-    public void Visit(VariableStatement s)
-    {
-        _environment.Define(s.Name, s.Initializer?.Accept(this));
-    }
+    public void Visit(VariableStatement s) => _environment.Define(s.Name, s.Initializer is null ? Uninitialized.Instance : s.Initializer.Accept(this));
 
     public object? Visit(VariableExpression e) => _environment.Get(e.Name);
 
