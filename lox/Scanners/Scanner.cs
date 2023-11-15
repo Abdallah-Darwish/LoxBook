@@ -171,7 +171,7 @@ public class Scanner : IScanner
                     c = Peek();
                     int col = _col;
                     bool seenDecimal = false;
-                    while (c is > '0' and < '9' || (c == '.' && !seenDecimal))
+                    while (c is >= '0' and <= '9' || (c == '.' && !seenDecimal))
                     {
                         c = Read();
                         seenDecimal |= c == '.';

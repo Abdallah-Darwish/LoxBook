@@ -1,6 +1,6 @@
 ﻿using Lox.Visitors;
 
-namespace lox.Utilities;
+namespace Lox.Utilities;
 
 public class ParserAdapter
 {

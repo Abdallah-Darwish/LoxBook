@@ -1,8 +1,7 @@
-﻿using lox.Utilities;
-using lox.Visitors;
+﻿using Lox.Utilities;
+using Lox.Visitors;
 using Lox.Parsers;
 using Lox.Scanners;
-using Lox.Visitors;
 using Lox.Visitors.Interpreters;
 using Lox.Visitors.Interpreters.Environemnts;
 string x = """"

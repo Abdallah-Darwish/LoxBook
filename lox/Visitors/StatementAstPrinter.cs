@@ -2,7 +2,7 @@
 using Lox.Visitors;
 
 
-namespace lox.Visitors
+namespace Lox.Visitors
 {
     public class StatementAstPrinter : IStatementVisitor
     {
