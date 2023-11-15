@@ -26,4 +26,8 @@
     <ProjectReference Include="..\Lox\Lox.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Utilities\" />
+  </ItemGroup>
+
 </Project>
