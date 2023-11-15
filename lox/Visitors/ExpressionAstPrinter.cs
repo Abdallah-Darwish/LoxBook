@@ -5,40 +5,44 @@ namespace Lox.Visitors;
 
 public class ExpressionAstPrinter : IExpressionVisitor<string>
 {
-    private string Parenthesize(string name, IEnumerable<Expression?>? expressions = null, IEnumerable<Token?>? tokens = null)
+    const char Separator = ' ';
+    private string Parenthesize(params object?[] ops)
     {
-        StringBuilder sb = new();
-        sb.Append("[ ").Append(name);
-        if (expressions is not null)
+        StringBuilder res = new();
+        res.Append('[');
+        foreach (var op in ops.Where(a => a is not null))
         {
-            foreach (var e in expressions)
+            switch (op)
             {
-                if (e is null) { continue; }
-                sb.Append(' ').Append(e.Accept(this));
+                case string txt:
+                    res.Append(Separator).Append(txt);
+                    break;
+                case Token token:
+                    res.Append(Separator).Append(token.Text);
+                    break;
+                case Expression expr:
+                    res.Append(Separator).Append(expr.Accept(this));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(ops));
+
             }
         }
-        if (tokens is not null)
-        {
-            foreach (var t in tokens)
-            {
-                if (t is null) { continue; }
-                sb.Append(' ').Append(t.Text);
-            }
-        }
-        return sb.Append(" ]").ToString();
+        res.Append(Separator).Append(']');
+        return res.ToString();
     }
 
-    public string Visit(TernaryExpression e) => Parenthesize("ternary", expressions: new[] { e.Condition, e.Left, e.Right });
+    public string Visit(TernaryExpression e) => Parenthesize(e.Condition, "?", e.Left, ":", e.Right);
 
-    public string Visit(BinaryExpression e) => Parenthesize(e.Operator.Text, expressions: new[] { e.Left, e.Right });
+    public string Visit(BinaryExpression e) => Parenthesize(e.Left, e.Operator, e.Right);
 
-    public string Visit(GroupingExpression e) => Parenthesize("group", expressions: new[] { e.Expression });
+    public string Visit(GroupingExpression e) => Parenthesize("(", e.Expression, ")");
 
     public string Visit(LiteralExpression e) => e.Value.Text;
 
-    public string Visit(UnaryExpression e) => Parenthesize(e.Operator.Text, expressions: new[] { e.Right });
+    public string Visit(UnaryExpression e) => Parenthesize(e.Operator, e.Right);
 
     public string Visit(VariableExpression e) => e.Name.Text;
 
-    public string Visit(AssignmentExpression e) => Parenthesize("=", tokens: new[] { e.Name }, expressions: new[] { e.Value });
+    public string Visit(AssignmentExpression e) => Parenthesize(e.Name, "=", e.Value);
 }

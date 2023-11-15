@@ -64,7 +64,7 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.If);
         _scanner.GetAndMoveNext(TokenType.LeftParentheses);
         var condition = ParseExpression();
-        _scanner.GetAndMoveNext(TokenType.RightBrace);
+        _scanner.GetAndMoveNext(TokenType.RightParentheses);
         var then = ParseStatement();
         Statement? els = null;
         if (_scanner.Current.Type == TokenType.Else)
@@ -78,7 +78,7 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.While);
         _scanner.GetAndMoveNext(TokenType.LeftParentheses);
         var condition = ParseExpression();
-        _scanner.GetAndMoveNext(TokenType.RightBrace);
+        _scanner.GetAndMoveNext(TokenType.RightParentheses);
         var body = ParseStatement();
         return new WhileStatement(condition, body);
     }

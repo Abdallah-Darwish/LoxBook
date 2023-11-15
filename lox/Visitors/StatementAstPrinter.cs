@@ -1,70 +1,97 @@
 ﻿using Lox.Core;
-using Lox.Visitors;
+using System.Text;
 
+namespace Lox.Visitors;
 
-namespace Lox.Visitors
+public class StatementAstPrinter : IStatementVisitor<string>
 {
-    public class StatementAstPrinter : IStatementVisitor
+    const string IdentationChar = "    ";
+    private readonly IExpressionVisitor<string> _expressionPrinter;
+    private string _indentation = string.Empty;
+    public StatementAstPrinter(IExpressionVisitor<string> expressionPrinter) => _expressionPrinter = expressionPrinter;
+    public string Push() => _indentation += IdentationChar;
+    public string Pop() => _indentation = _indentation[..^IdentationChar.Length];
+
+    private string Parenthesize(params object?[] ops)
     {
-        private readonly TextWriter _output;
-        private readonly IExpressionVisitor<string> _expressionVisitor;
-        private void Parenthesize(string? name, IEnumerable<Statement?>? statements = null, IEnumerable<Expression?>? expressions = null, IEnumerable<Token?>? tokens = null)
+        StringBuilder res = new();
+        string sep = _indentation;
+        res.Append(sep).Append('{');
+        sep = " ";
+        var push = ops.Any(op => op is Statement);
+        if (push)
         {
-            _output.Write('{');
-            if (name is not null && !string.IsNullOrWhiteSpace(name))
-            {
-                _output.Write(name);
-            }
-            if (statements is not null)
-            {
-                foreach (var s in statements)
-                {
-                    if (s is null) { continue; }
-                    _output.Write(' ');
-                    s.Accept(this);
-                }
-            }
-            if (expressions is not null)
-            {
-                foreach (var e in expressions)
-                {
-                    if (e is null) { continue; }
-                    _output.Write(' ');
-                    _output.Write(e.Accept(_expressionVisitor));
-                }
-            }
-            if (tokens is not null)
-            {
-                foreach (var t in tokens)
-                {
-                    if (t is null) { continue; }
-                    _output.Write(' ');
-                    _output.Write(t.Text);
-                }
-            }
-            if (name is not null && !char.IsWhiteSpace(name[^1]))
-            {
-                _output.Write(' ');
-            }
-            _output.WriteLine('}');
+            Push();
         }
-
-        public StatementAstPrinter(IExpressionVisitor<string> expressionVisitor, TextWriter output)
+        foreach (var op in ops?.Where(a => a is not null) ?? Enumerable.Empty<object>())
         {
-            _output = output;
-            _expressionVisitor = expressionVisitor;
+            switch (op)
+            {
+                case string txt:
+                    res.Append(sep).Append(txt);
+                    sep = " ";
+                    break;
+                case Token token:
+                    res.Append(sep).Append(token.Text);
+                    sep = " ";
+                    break;
+                case Expression expr:
+                    res.Append(sep).Append(expr.Accept(_expressionPrinter));
+                    sep = " ";
+                    break;
+                case Statement stmt:
+                    if (res[^1] != '\n')
+                    {
+                        res.AppendLine();
+                    }
+                    res.AppendLine(stmt.Accept(this));
+                    sep = _indentation;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(ops));
+
+            }
         }
-
-        public void Visit(ExpressionStatement s) => Parenthesize(null, expressions: new[] { s.Expression });
-
-        public void Visit(PrintStatement s) => Parenthesize("print", expressions: new[] { s.Expression });
-
-        public void Visit(VariableStatement s) => Parenthesize("var", expressions: new[] { s.Initializer }, tokens: new[] { s.Name });
-
-        public void Visit(BlockStatement s) => Parenthesize("block\n", statements: s.Statements);
-
-        public void Visit(IfStatement s) => Parenthesize("if\n", statements: new Statement?[] { s.Then, s.Else });
-
-        public void Visit(WhileStatement s) => Parenthesize("while\n", statements: new Statement?[] { s.Body });
+        if (push)
+        {
+            bool setSep = sep == _indentation;
+            Pop();
+            if (setSep) { sep = _indentation; }
+                
+        }
+        res.Append(sep).Append('}');
+        return res.ToString();
     }
+
+        
+
+    public string Visit(ExpressionStatement s) => Parenthesize(s.Expression);
+
+    public string Visit(PrintStatement s) => Parenthesize("print", s.Expression);
+
+    public string Visit(VariableStatement s) => Parenthesize("var", s.Name, "=", s.Initializer);
+
+    public string Visit(BlockStatement s) => Parenthesize(s.Statements.Cast<object>().Prepend("block").ToArray());
+
+    public string Visit(IfStatement s) => Parenthesize("if", s.Condition, s.Then, s.Else);
+
+    public string Visit(WhileStatement s) => Parenthesize("while", s.Condition, s.Body);
+}
+
+public class ConsoleStatementAstPrinter : IStatementVisitor
+{
+    private readonly IStatementVisitor<string> _statementPrinter;
+    public ConsoleStatementAstPrinter(IStatementVisitor<string> statementPrinter) => _statementPrinter = statementPrinter;
+    private void Print(Statement s) => Console.WriteLine(s.Accept(_statementPrinter));
+    public void Visit(ExpressionStatement s) => Print(s);
+
+    public void Visit(PrintStatement s) => Print(s);
+
+    public void Visit(VariableStatement s) => Print(s);
+
+    public void Visit(BlockStatement s) => Print(s);
+
+    public void Visit(IfStatement s) => Print(s);
+
+    public void Visit(WhileStatement s) => Print(s);
 }
