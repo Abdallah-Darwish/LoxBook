@@ -16,7 +16,7 @@ x = x + "456";
 """";
 Scanner sc = new(new StringReader(x));
 Parser p = new(sc);
-Interpreter interpreter = new(new LoxEnvironemnt(), Console.Out);
+Interpreter interpreter = new(new LoxEnvironment(), Console.Out);
 StatementAstPrinter printer = new(new ExpressionAstPrinter(), Console.Out);
 ParserAdapter ad = new(p, new IStatementVisitor[] { printer/*, interpreter*/ });
 ad.Visit();

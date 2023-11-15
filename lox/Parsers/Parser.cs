@@ -55,8 +55,33 @@ public class Parser : IParser
     {
         TokenType.Print => ParsePrint(),
         TokenType.LeftBrace => new BlockStatement(ParseBlock()),
+        TokenType.If => ParseIf(),
+        TokenType.While => ParseWhile(),
         _ => ParseExpressionStatement()
     };
+    private IfStatement ParseIf()
+    {
+        _scanner.GetAndMoveNext(TokenType.If);
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+        var condition = ParseExpression();
+        _scanner.GetAndMoveNext(TokenType.RightBrace);
+        var then = ParseStatement();
+        Statement? els = null;
+        if (_scanner.Current.Type == TokenType.Else)
+        {
+            els = ParseStatement();
+        }
+        return new IfStatement(condition, then, els);
+    }
+    private WhileStatement ParseWhile()
+    {
+        _scanner.GetAndMoveNext(TokenType.While);
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+        var condition = ParseExpression();
+        _scanner.GetAndMoveNext(TokenType.RightBrace);
+        var body = ParseStatement();
+        return new WhileStatement(condition, body);
+    }
     private IReadOnlyList<Statement> ParseBlock()
     {
         _scanner.GetAndMoveNext(TokenType.LeftBrace);
@@ -130,6 +155,27 @@ public class Parser : IParser
         return new TernaryExpression(condition, left, right);
     }
 
+
+    private Expression ParseOr()
+    {
+        var expr = ParseAnd();
+        while (_scanner.Current.Type == TokenType.Or)
+        {
+            var op = _scanner.GetAndMoveNext();
+            expr = new BinaryExpression(expr, op, ParseAnd());
+        }
+        return expr;
+    }
+    private Expression ParseAnd()
+    {
+        var expr = ParseEquality();
+        while (_scanner.Current.Type == TokenType.And)
+        {
+            var op = _scanner.GetAndMoveNext();
+            expr = new BinaryExpression(expr, op, ParseEquality());
+        }
+        return expr;
+    }
 
     private Expression ParseEquality()
     {

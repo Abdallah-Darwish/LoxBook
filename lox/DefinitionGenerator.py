@@ -142,6 +142,8 @@ Expression : Expression Expression
 Print      : Expression Expression
 Variable   : Token Name, Expression? Initializer
 Block      : IReadOnlyList<$base$> Statements
+If         : Expression Condition, $base$ Then, $base$? Else
+While      : Expression Condition, $base$ Body
 """
 statements = Ast('Core', 'Statement', statements_ast_txt, VisitorVariant.ALL)
 

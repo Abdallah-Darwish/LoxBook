@@ -6,7 +6,7 @@ namespace Lox.Visitors.Interpreters;
 public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 {
     private readonly TextWriter _output;
-    private readonly ILoxEnvironment _environment;
+    private ILoxEnvironment _environment;
     public Interpreter(ILoxEnvironment environment, TextWriter output)
     {
         _output = output;
@@ -101,6 +101,18 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
             case TokenType.Comma:
                 e.Left.Accept(this);
                 return e.Right.Accept(this);
+            case TokenType.And:
+                {
+                    var lft = e.Left.Accept(this);
+                    if (!IsTruthy(lft)) { return lft; }
+                    return e.Right.Accept(this);
+                }
+            case TokenType.Or:
+                {
+                    var lft = e.Left.Accept(this);
+                    if (IsTruthy(lft)) { return lft; }
+                    return e.Right.Accept(this);
+                }
             default:
                 throw new InvalidOperationException($"Unsupported operator {e.Operator.Type} type for {nameof(BinaryExpression)}");
         };
@@ -140,6 +152,35 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 
     public void Visit(BlockStatement s)
     {
-        throw new NotImplementedException();
+        var prevEnv = _environment;
+        try
+        {
+            _environment = new LoxEnvironment(prevEnv as LoxEnvironment);
+            foreach (var stmt in s.Statements)
+            {
+                stmt.Accept(this);
+            }
+        }
+        finally { _environment = prevEnv; }
+    }
+
+    public void Visit(IfStatement s)
+    {
+        if (IsTruthy(s.Condition.Accept(this)))
+        {
+            s.Then.Accept(this);
+        }
+        else
+        {
+            s.Else?.Accept(this);
+        }
+    }
+
+    public void Visit(WhileStatement s)
+    {
+        while (IsTruthy(s.Condition.Accept(this)))
+        {
+            s.Body.Accept(this);
+        }
     }
 }

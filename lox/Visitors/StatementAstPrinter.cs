@@ -62,5 +62,9 @@ namespace lox.Visitors
         public void Visit(VariableStatement s) => Parenthesize("var", expressions: new[] { s.Initializer }, tokens: new[] { s.Name });
 
         public void Visit(BlockStatement s) => Parenthesize("block\n", statements: s.Statements);
+
+        public void Visit(IfStatement s) => Parenthesize("if\n", statements: new Statement?[] { s.Then, s.Else });
+
+        public void Visit(WhileStatement s) => Parenthesize("while\n", statements: new Statement?[] { s.Body });
     }
 }
