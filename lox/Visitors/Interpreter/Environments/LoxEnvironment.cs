@@ -42,6 +42,10 @@ public class LoxEnvironment : ILoxEnvironment
         {
             throw new UndefinedIdentifierException(id);
         }
+        if (val == Uninitialized.Instance)
+        {
+            throw new UninitializedIdentifierException(id);
+        }
         return val;
     }
     public bool TrySet(string id, object? value)
