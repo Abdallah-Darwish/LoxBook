@@ -6,6 +6,8 @@ namespace Lox.Parsers;
 public class Parser : IParser
 {
     private IScanner _scanner;
+    private int _loopDepth = 0;
+    private bool IsInLoopRule => _loopDepth > 0;
     private bool _disposed;
     private void CheckDisposed()
     {
@@ -74,8 +76,19 @@ public class Parser : IParser
         TokenType.If => ParseIf(),
         TokenType.While => ParseWhile(),
         TokenType.For => ParseFor(),
+        TokenType.Break => ParseBreak(),
         _ => ParseExpressionStatement()
     };
+    private BreakStatement ParseBreak()
+    {
+        if (!IsInLoopRule)
+        {
+            throw new ParserException("No enclosing loop out of which to break.", _scanner.Current);
+        }
+        _scanner.GetAndMoveNext(TokenType.Break);
+        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        return new BreakStatement();
+    }
     private IfStatement ParseIf()
     {
         _scanner.GetAndMoveNext(TokenType.If);
@@ -96,7 +109,8 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.LeftParentheses);
         var condition = ParseExpression();
         _scanner.GetAndMoveNext(TokenType.RightParentheses);
-        var body = ParseStatement();
+
+        var body = ParseLoopBody();
         return new WhileStatement(condition, body);
     }
     private Statement ParseFor()
@@ -136,11 +150,17 @@ public class Parser : IParser
         }
         _scanner.GetAndMoveNext(TokenType.RightParentheses);
 
-        var body = ParseStatement();
+        var body = ParseLoopBody();
         Statement whileBody = iter is null ? body : new BlockStatement(new Statement[] { body, iter });
         Statement whileStmt = new WhileStatement(cond, whileBody);
 
         return init is null ? whileStmt : new BlockStatement(new Statement[] { init, whileStmt });
+    }
+    private Statement ParseLoopBody()
+    {
+        _loopDepth++;
+        try { return ParseStatement(); }
+        finally { _loopDepth--; }
     }
     private IReadOnlyList<Statement> ParseBlock()
     {

@@ -33,7 +33,7 @@ class SyntaxNode:
         self.name = self.name.strip()
         self.types = [
             tuple(j.strip() for j in i.split()) for i in self.types.split(",")
-        ]
+        ] if self.types else []
         self.base_name = base_name
         self.class_name = f'{self.name}{self.base_name}'
 
@@ -144,6 +144,7 @@ Variable   : Token Name, Expression? Initializer
 Block      : IReadOnlyList<$base$> Statements
 If         : Expression Condition, $base$ Then, $base$? Else
 While      : Expression Condition, $base$ Body
+Break      :
 """
 statements = Ast('Core', 'Statement', statements_ast_txt, VisitorVariant.ALL)
 

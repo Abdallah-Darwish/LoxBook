@@ -1,4 +1,6 @@
-﻿namespace Lox.Tests;
+﻿using Lox.Parsers;
+
+namespace Lox.Tests;
 
 public class TestParser
 {
@@ -9,7 +11,6 @@ public class TestParser
 1 == 2, x = 1 == 3, y = z;
 """;
         var stmt = Utility.ParseAsString(source);
-
 
         Assert.Equal("{ [ [ [ 1 == 2 ] , [ x = [ 1 == 3 ] ] ] , [ y = z ] ] }", stmt);
     }
@@ -111,4 +112,54 @@ for(var x = 1; x < 505;)
         Assert.Equal(expected, stmt);
     }
 
+    [Fact]
+    public void TestParseBreak_NotInLoop_ShouldThrowParserException()
+    {
+        string source = """
+break;
+""";
+
+        var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
+        Assert.Contains("No enclosing loop out of which to break", ex.Message);
+    }
+
+    [Fact]
+    public void TestParseBreak_InLoop_ShouldParseBreak()
+    {
+        string source = """
+for(var i = "hehe"; i or 2;)
+{
+    if(i == 10)
+    {
+        if(i == 11)
+        {
+            print i;
+            break;
+        }
+    }
+}
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ block
+    { var i = "hehe" }
+    { while [ i or 2 ]
+        { block
+            { if [ i == 10 ]
+                { block
+                    { if [ i == 11 ]
+                        { block
+                            { print i }
+                            { break }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+""";
+
+        Assert.Equal(expected, stmt);
+    }
 }

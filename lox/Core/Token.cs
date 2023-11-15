@@ -59,6 +59,7 @@ public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
         [TokenType.True] = "true",
         [TokenType.Var] = "var",
         [TokenType.While] = "while",
+        [TokenType.Break] = "break",
     }.ToImmutableDictionary();
     public string Text
     {

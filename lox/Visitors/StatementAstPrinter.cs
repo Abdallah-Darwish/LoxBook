@@ -57,13 +57,13 @@ public class StatementAstPrinter : IStatementVisitor<string>
             bool setSep = sep == _indentation;
             Pop();
             if (setSep) { sep = _indentation; }
-                
+
         }
         res.Append(sep).Append('}');
         return res.ToString();
     }
 
-        
+
 
     public string Visit(ExpressionStatement s) => Parenthesize(s.Expression);
 
@@ -76,6 +76,8 @@ public class StatementAstPrinter : IStatementVisitor<string>
     public string Visit(IfStatement s) => Parenthesize("if", s.Condition, s.Then, s.Else);
 
     public string Visit(WhileStatement s) => Parenthesize("while", s.Condition, s.Body);
+
+    public string Visit(BreakStatement s) => Parenthesize("break");
 }
 
 public class ConsoleStatementAstPrinter : IStatementVisitor
@@ -94,4 +96,6 @@ public class ConsoleStatementAstPrinter : IStatementVisitor
     public void Visit(IfStatement s) => Print(s);
 
     public void Visit(WhileStatement s) => Print(s);
+
+    public void Visit(BreakStatement s) => Print(s);
 }

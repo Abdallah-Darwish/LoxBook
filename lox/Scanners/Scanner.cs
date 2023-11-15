@@ -67,7 +67,8 @@ public class Scanner : IScanner
             ["this"] = TokenType.This,
             ["true"] = TokenType.True,
             ["var"] = TokenType.Var,
-            ["while"] = TokenType.While
+            ["while"] = TokenType.While,
+            ["break"] = TokenType.Break
         }.ToImmutableDictionary();
     private Token BuildToken(TokenType type, string? lexeme, int col = -1, int line = -1) => new(line != -1 ? line : _line, col != -1 ? col : _col, type, lexeme);
     private Token BuildToken(TokenType type, int col = -1, int line = -1) => BuildToken(type, null, col, line);

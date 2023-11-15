@@ -10,6 +10,7 @@ public interface IStatementVisitor
     void Visit(BlockStatement s);
     void Visit(IfStatement s);
     void Visit(WhileStatement s);
+    void Visit(BreakStatement s);
 }
 public interface IStatementVisitor<T>
 {
@@ -19,4 +20,5 @@ public interface IStatementVisitor<T>
     T Visit(BlockStatement s);
     T Visit(IfStatement s);
     T Visit(WhileStatement s);
+    T Visit(BreakStatement s);
 }

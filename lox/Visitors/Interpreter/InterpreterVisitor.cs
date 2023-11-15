@@ -177,7 +177,16 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
     {
         while (IsTruthy(s.Condition.Accept(this)))
         {
-            s.Body.Accept(this);
+            try
+            {
+                s.Body.Accept(this);
+            }
+            catch (BreakException)
+            {
+                return;
+            }
         }
     }
+
+    public void Visit(BreakStatement s) => throw new BreakException(s);
 }
