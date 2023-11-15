@@ -1,26 +1,38 @@
 ﻿using Lox.Core;
+using Lox.Parsers;
 using Lox.Scanners;
+using Lox.Visitors;
+using System;
 
 namespace Lox.Tests;
 
 public class TestParser
 {
-    [Theory]
-    [InlineData("123456789")]
-    [InlineData("99999")]
-    [InlineData("00000.999")]
-    [InlineData("0")]
-    [InlineData("55")]
-    public void TestScanNumbers_ValidNumber_ReturnsValue(string num)
+    private static IParser MakeParser(string source) => new Parser(new Scanner(new StringReader(source)));
+
+    private static Statement? Parse(string source)
     {
-        var source = new StringReader(num);
-        Scanner scanner = new(source);
+        using var parser = MakeParser(source);
+        return parser.Parse();
+    }
+
+    private static string? ParseAsString(string source)
+    {
+        var stmt = Parse(source);
+        if(stmt is null) { return null; }
+        var printer = new StatementAstPrinter(new ExpressionAstPrinter());
+        return stmt.Accept(printer);
+    }
+
+    [Fact]
+    public void TestParseComma_CommaWithAssignment_AssignmentTakesPrecedence()
+    {
+        string source = """
+1 == 2, x = 1 == 3, y = z;
+""";
+        var stmt = ParseAsString(source);
 
 
-        Assert.True(scanner.MoveNext());
-        var token = scanner.GetAndMoveNext();
-        Assert.Equal(TokenType.Number, token.Type);
-        Assert.Equal(num, token.Lexeme);
-        Assert.Equal(double.Parse(num), token.Value);
+        Assert.Equal("{ [ [ [ 1 == 2 ] , [ x = [ 1 == 3 ] ] ] , [ y = z ] ] }", stmt);
     }
 }

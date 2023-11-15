@@ -5,9 +5,24 @@ namespace Lox.Parsers;
 
 public class Parser : IParser
 {
-    private readonly IScanner _scanner;
+    private IScanner _scanner;
+    private bool _disposed;
+    private void CheckDisposed()
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(GetType().FullName);
+        }
+    }
 
-    public bool IsExhausted => _scanner.IsExhausted;
+    public bool IsExhausted
+    {
+        get
+        {
+            CheckDisposed();
+            return _scanner.IsExhausted;
+        }
+    }
 
     public Parser(IScanner scanner)
     {
@@ -17,6 +32,7 @@ public class Parser : IParser
     /// <inheritdoc/>
     public Statement? Parse()
     {
+        CheckDisposed();
         if (IsExhausted) { return null; }
         try
         {
@@ -116,7 +132,7 @@ public class Parser : IParser
         while (_scanner.Current.Type == TokenType.Comma)
         {
             var com = _scanner.GetAndMoveNext();
-            expr = new BinaryExpression(expr, com, ParseTernary());
+            expr = new BinaryExpression(expr, com, ParseAssignment());
         }
 
         return expr;
@@ -271,5 +287,25 @@ public class Parser : IParser
                 return;
             }
         }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _scanner.Dispose();
+            }
+            _scanner = null;
+            _disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

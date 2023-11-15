@@ -1,6 +1,6 @@
 using Lox.Core;
 
-public interface IParser
+public interface IParser : IDisposable
 {
     bool IsExhausted { get; }
     /// <summary>
