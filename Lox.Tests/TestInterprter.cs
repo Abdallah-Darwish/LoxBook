@@ -52,4 +52,24 @@ print x;
         var ex = Assert.Throws<UninitializedIdentifierException>(() => Utility.Interpret(source));
         Assert.Equal("x", ex.Id.Text);
     }
+
+    [Fact]
+    public void TestVisitWhile_VisitDesugaredFor_WorksFine()
+    {
+        string source = """
+for(var i = 0; i < 5; i = i + 1)
+    print i;
+""";
+
+        string expected = """
+0
+1
+2
+3
+4
+
+""";
+
+        Assert.Equal(expected, Utility.Interpret(source));
+    }
 }

@@ -73,6 +73,7 @@ public class Parser : IParser
         TokenType.LeftBrace => new BlockStatement(ParseBlock()),
         TokenType.If => ParseIf(),
         TokenType.While => ParseWhile(),
+        TokenType.For => ParseFor(),
         _ => ParseExpressionStatement()
     };
     private IfStatement ParseIf()
@@ -97,6 +98,49 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.RightParentheses);
         var body = ParseStatement();
         return new WhileStatement(condition, body);
+    }
+    private Statement ParseFor()
+    {
+        _scanner.GetAndMoveNext(TokenType.For);
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+
+        Statement? init = null;
+        if (_scanner.Current.Type == TokenType.Var)
+        {
+            init = ParseVariableDeclaration();
+        }
+        else if (_scanner.Current.Type != TokenType.Semicolon)
+        {
+            init = ParseExpressionStatement();
+        }
+        else
+        {
+            _scanner.GetAndMoveNext(TokenType.Semicolon);
+        }
+
+        Expression cond = null;
+        if (_scanner.Current.Type != TokenType.Semicolon)
+        {
+            cond = ParseExpressionStatement().Expression;
+        }
+        else
+        {
+            cond = new LiteralExpression(new Token(-1, -1, TokenType.True, null));
+            _scanner.GetAndMoveNext(TokenType.Semicolon);
+        }
+
+        ExpressionStatement? iter = null;
+        if (_scanner.Current.Type != TokenType.RightParentheses)
+        {
+            iter = new(ParseExpression());
+        }
+        _scanner.GetAndMoveNext(TokenType.RightParentheses);
+
+        var body = ParseStatement();
+        Statement whileBody = iter is null ? body : new BlockStatement(new Statement[] { body, iter });
+        Statement whileStmt = new WhileStatement(cond, whileBody);
+
+        return init is null ? whileStmt : new BlockStatement(new Statement[] { init, whileStmt });
     }
     private IReadOnlyList<Statement> ParseBlock()
     {
