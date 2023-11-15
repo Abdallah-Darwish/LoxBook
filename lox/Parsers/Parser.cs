@@ -141,17 +141,17 @@ public class Parser : IParser
 
     private Expression ParseTernary()
     {
-        var condition = ParseEquality();
+        var condition = ParseOr();
         if (_scanner.Current.Type != TokenType.QuestionMark)
         {
             return condition;
         }
 
         _scanner.GetAndMoveNext();
-        var left = ParseEquality();
+        var left = ParseOr();
         _scanner.GetAndMoveNext(TokenType.Colon);
 
-        var right = ParseEquality();
+        var right = ParseOr();
         return new TernaryExpression(condition, left, right);
     }
 

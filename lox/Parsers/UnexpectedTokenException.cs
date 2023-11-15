@@ -6,5 +6,5 @@ public class UnexpectedTokenException : ParserException
 {
     public TokenType ExpectedTokenType { get; }
     public UnexpectedTokenException(Token token, TokenType expectedTokenType)
-        : base($"Expected a token of type {expectedTokenType} instead found token of type {token.Type}", token) { }
+        : base($"Expected a token of type {expectedTokenType} instead found token of type {token.Type} at Line {token.Line}, Column: {token.Column}", token) { }
 }

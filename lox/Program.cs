@@ -6,13 +6,7 @@ using Lox.Visitors;
 using Lox.Visitors.Interpreters;
 using Lox.Visitors.Interpreters.Environemnts;
 string x = """"
-var x = "123";
-print x;
-x = x + "456";
-{
-    print yy;
-    print x;
-}
+var x = 1 == 10 or 10 == 10;
 """";
 Scanner sc = new(new StringReader(x));
 Parser p = new(sc);
