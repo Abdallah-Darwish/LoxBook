@@ -5,11 +5,11 @@ namespace Lox.Visitors.Interpreters;
 
 public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 {
-    private readonly TextWriter _output;
+    private readonly IOutputSync<object?> _outputSync;
     private ILoxEnvironment _environment;
-    public Interpreter(ILoxEnvironment environment, TextWriter output)
+    public Interpreter(ILoxEnvironment environment, IOutputSync<object?> outputSync)
     {
-        _output = output;
+        _outputSync = outputSync;
         _environment = environment;
     }
     private static bool IsTruthy(object? obj)
@@ -73,9 +73,9 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
                     return (double)leftValue + (double)rightValue;
                 }
             case TokenType.Minus:
-                return AsDouble(e.Right) - AsDouble(e.Left);
+                return AsDouble(e.Left) - AsDouble(e.Right);
             case TokenType.Star:
-                return AsDouble(e.Right) * AsDouble(e.Right);
+                return AsDouble(e.Left) * AsDouble(e.Right);
             case TokenType.Slash:
                 {
                     var leftValue = AsDouble(e.Left);
@@ -134,7 +134,7 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 
     public void Visit(ExpressionStatement s) => s.Expression.Accept(this);
 
-    public void Visit(PrintStatement s) => _output.WriteLine(s.Expression.Accept(this) ?? "$nil$");
+    public void Visit(PrintStatement s) => _outputSync.Push(s.Expression.Accept(this));
 
     public void Visit(VariableStatement s) => _environment.Define(s.Name, s.Initializer is null ? Uninitialized.Instance : s.Initializer.Accept(this));
 

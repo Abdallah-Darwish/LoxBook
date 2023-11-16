@@ -1,5 +1,6 @@
 using Lox.Core;
 using Lox.Scanners;
+using Lox.Tests.Utilities;
 
 namespace Lox.Tests;
 

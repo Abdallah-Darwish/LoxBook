@@ -5,21 +5,24 @@ using Lox.Scanners;
 using Lox.Visitors.Interpreters;
 using Lox.Visitors.Interpreters.Environemnts;
 string x = """"
-var x = 1;
-while(x < 3)
+for(var i = 0; i < 5; i = i + 1)
 {
-    print x;
-    x = x + 1;
-    while(x > 5)
+    var j = i;
+    while(true)
     {
-        if (x == 2)
-            print 1;
+        if(j <= 0)
+        {
+            break;
+        }
+        print j;
+        j = j - 1;
     }
 }
 """";
 Scanner sc = new(new StringReader(x));
 Parser p = new(sc);
-Interpreter interpreter = new(new LoxEnvironment(), Console.Out);
+TextOutputSync sync = new(Console.Out);
+Interpreter interpreter = new(new LoxEnvironment(), sync);
 ConsoleStatementAstPrinter printer = new(new StatementAstPrinter(new ExpressionAstPrinter()));
 ParserAdapter ad = new(p, new IStatementVisitor[] { printer, interpreter });
 ad.Visit();

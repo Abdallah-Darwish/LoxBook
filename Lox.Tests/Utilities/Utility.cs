@@ -6,7 +6,7 @@ using Lox.Visitors;
 using Lox.Visitors.Interpreters;
 using Lox.Visitors.Interpreters.Environemnts;
 
-namespace Lox.Tests;
+namespace Lox.Tests.Utilities;
 
 public static class Utility
 {
@@ -35,13 +35,19 @@ public static class Utility
         return stmt.Accept(printer);
     }
 
-    public static string Interpret(string source)
+    public static IReadOnlyList<object?> Interpret(string source)
     {
-        using StringWriter sw = new();
+        var sync = new BufferOutputSync<object?>();
         using var parser = MakeParser(source);
-        ParserAdapter ad = new(parser, new IStatementVisitor[] { new Interpreter(new LoxEnvironment(), sw) });
+        ParserAdapter ad = new(parser, new IStatementVisitor[] { new Interpreter(new LoxEnvironment(), sync) });
         ad.Visit();
-        return sw.ToString();
+        return sync.Buffer;
+    }
+
+    public static IReadOnlyList<T> Interpret<T>(string source)
+    {
+        var objList = Interpret(source);
+        return objList.Cast<T>().ToArray();
     }
 
 }

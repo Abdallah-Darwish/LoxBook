@@ -1,4 +1,5 @@
-﻿using Lox.Visitors.Interpreters.Environemnts;
+﻿using Lox.Tests.Utilities;
+using Lox.Visitors.Interpreters.Environemnts;
 
 namespace Lox.Tests;
 
@@ -17,14 +18,9 @@ print x;
 print x;
 """;
 
-        string expected = """
-1
-2
-1
+        var expected = new double[] { 1, 2, 1 };
 
-""";
-
-        Assert.Equal(expected, Utility.Interpret(source));
+        Assert.Equal(expected, Utility.Interpret<double>(source));
     }
 
     [Fact]
@@ -61,15 +57,32 @@ for(var i = 0; i < 5; i = i + 1)
     print i;
 """;
 
-        string expected = """
-0
-1
-2
-3
-4
+        var expected = new double[] { 0, 1, 2, 3, 4 };
 
+        Assert.Equal(expected, Utility.Interpret<double>(source));
+    }
+
+    [Fact]
+    public void TestVisitBreak_NestedLoop_BreakInnerMostLoopOnly()
+    {
+        string source = """
+for(var i = 0; i < 5; i = i + 1)
+{
+    var j = i;
+    while(true)
+    {
+        if(j <= 0)
+        {
+            break;
+        }
+        print j;
+        j = j - 1;
+    }
+}
 """;
 
-        Assert.Equal(expected, Utility.Interpret(source));
+        var expected = new double[] { 1, 2, 1, 3, 2, 1, 4, 3, 2, 1 };
+
+        Assert.Equal(expected, Utility.Interpret<double>(source));
     }
 }

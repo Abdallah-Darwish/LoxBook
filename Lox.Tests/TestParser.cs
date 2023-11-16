@@ -1,4 +1,5 @@
 ﻿using Lox.Parsers;
+using Lox.Tests.Utilities;
 
 namespace Lox.Tests;
 
