@@ -1,6 +1,7 @@
 using Lox.Core;
+using Lox.Visitors.Interpreters.Exceptions;
 
-namespace Lox.Visitors.Interpreters.Environemnts;
+namespace Lox.Visitors.Interpreters.Environments;
 
 public class UndefinedIdentifierException : RuntimeException
 {

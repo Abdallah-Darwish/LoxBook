@@ -41,3 +41,8 @@ public record class AssignmentExpression(Token Name, Expression Value) : Express
 {
     public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
+
+public record class CallExpression(Expression Callee, Token RightParentheses, Expression[] Arguments) : Expression
+{
+    public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
+}

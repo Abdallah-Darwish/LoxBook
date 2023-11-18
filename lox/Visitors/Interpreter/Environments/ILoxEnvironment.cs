@@ -1,6 +1,6 @@
 using Lox.Core;
 
-namespace Lox.Visitors.Interpreters.Environemnts;
+namespace Lox.Visitors.Interpreters.Environments;
 
 public interface ILoxEnvironment
 {

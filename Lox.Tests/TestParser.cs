@@ -24,7 +24,6 @@ x = 1 == 2 ? "HOW!" : "makes sense";
 """;
         var stmt = Utility.ParseAsString(source);
 
-
         Assert.Equal("""{ [ x = [ [ 1 == 2 ] ? "HOW!" : "makes sense" ] ] }""", stmt);
     }
 
@@ -162,5 +161,54 @@ for(var i = "hehe"; i or 2;)
 """;
 
         Assert.Equal(expected, stmt);
+    }
+
+    [Theory]
+    [InlineData("nil(1, 2);")]
+    [InlineData("true(1, 2);")]
+    [InlineData("\"hello\"(1, 2);")]
+    public void ParseCall_CalleeIsLiteral_ThrowsException(string source)
+    {
+        var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
+        Assert.Contains("Literals are not callable", ex.Message);
+    }
+
+    [Fact]
+    public void ParseCall_NestedFunctionCalls_ArgsShouldBeOfTypeCall()
+    {
+        string source = """
+min(max(1, 2), sqrt(1, -pow(5, 6), floor(10)), !gcd(505, 506, "hello", 1 + 2), clock());
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ [ min ( [ max ( 1 , 2 ) ] , [ sqrt ( 1 , [ - [ pow ( 5 , 6 ) ] ] , [ floor ( 10 ) ] ) ] , [ ! [ gcd ( 505 , 506 , "hello" , [ 1 + 2 ] ) ] ] , [ clock ( ) ] ) ] }
+""";
+
+        Assert.Equal(expected, stmt);
+    }
+
+    [Fact]
+    public void ParseCall_AggregateFunctionCalls_CalleeShouldBeCallExpression()
+    {
+        string source = """
+min(1, 2)(3, 4)();
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ [ [ [ min ( 1 , 2 ) ] ( 3 , 4 ) ] ( ) ] }
+""";
+
+        Assert.Equal(expected, stmt);
+    }
+
+    [Fact]
+    public void ParseCall_AdditionalComma_ThrowsException()
+    {
+        string source = """
+min(1,);
+""";
+        var ex = Assert.Throws<UnexpectedTokenException>(() => Utility.Parse(source));
+        Assert.Contains("Expected a token of type LeftParentheses instead found token of type RightParentheses at Line", ex.Message);
+        // This error is confusing but honestly I don't want to fix it and I want to focus on finishing the book
     }
 }

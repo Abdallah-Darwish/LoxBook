@@ -45,4 +45,19 @@ public class ExpressionAstPrinter : IExpressionVisitor<string>
     public string Visit(VariableExpression e) => e.Name.Text;
 
     public string Visit(AssignmentExpression e) => Parenthesize(e.Name, "=", e.Value);
+
+    public string Visit(CallExpression e)
+    {
+        List<object?> expr = [e.Callee, "("];
+        foreach (var arg in e.Arguments)
+        {
+            if (expr.Count > 2)
+            {
+                expr.Add(",");
+            }
+            expr.Add(arg);
+        }
+        expr.Add(")");
+        return Parenthesize([.. expr]);
+    }
 }

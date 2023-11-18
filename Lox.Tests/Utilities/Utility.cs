@@ -4,7 +4,7 @@ using Lox.Scanners;
 using Lox.Utilities;
 using Lox.Visitors;
 using Lox.Visitors.Interpreters;
-using Lox.Visitors.Interpreters.Environemnts;
+using Lox.Visitors.Interpreters.Environments;
 
 namespace Lox.Tests.Utilities;
 
@@ -39,7 +39,7 @@ public static class Utility
     {
         var sync = new BufferOutputSync<object?>();
         using var parser = MakeParser(source);
-        ParserAdapter ad = new(parser, new IStatementVisitor[] { new Interpreter(new LoxEnvironment(), sync) });
+        ParserAdapter ad = new(parser, new IStatementVisitor[] { new Interpreter(LoxEnvironment.GlobalEnvironment, sync) });
         ad.Visit();
         return sync.Buffer;
     }

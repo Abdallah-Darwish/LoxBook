@@ -11,4 +11,5 @@ public interface IExpressionVisitor<T>
     T Visit(UnaryExpression e);
     T Visit(VariableExpression e);
     T Visit(AssignmentExpression e);
+    T Visit(CallExpression e);
 }

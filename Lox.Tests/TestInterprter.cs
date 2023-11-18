@@ -1,5 +1,6 @@
 ﻿using Lox.Tests.Utilities;
-using Lox.Visitors.Interpreters.Environemnts;
+using Lox.Visitors.Interpreters.Environments;
+using Lox.Visitors.Interpreters.Exceptions;
 
 namespace Lox.Tests;
 
@@ -17,8 +18,7 @@ print x;
 }
 print x;
 """;
-
-        var expected = new double[] { 1, 2, 1 };
+        double[] expected = [1, 2, 1];
 
         Assert.Equal(expected, Utility.Interpret<double>(source));
     }
@@ -45,6 +45,7 @@ print x;
 var x;
 print x;
 """;
+
         var ex = Assert.Throws<UninitializedIdentifierException>(() => Utility.Interpret(source));
         Assert.Equal("x", ex.Id.Text);
     }
@@ -57,7 +58,7 @@ for(var i = 0; i < 5; i = i + 1)
     print i;
 """;
 
-        var expected = new double[] { 0, 1, 2, 3, 4 };
+        double[] expected = [0, 1, 2, 3, 4];
 
         Assert.Equal(expected, Utility.Interpret<double>(source));
     }
@@ -81,8 +82,43 @@ for(var i = 0; i < 5; i = i + 1)
 }
 """;
 
-        var expected = new double[] { 1, 2, 1, 3, 2, 1, 4, 3, 2, 1 };
+        double[] expected = [1, 2, 1, 3, 2, 1, 4, 3, 2, 1];
 
         Assert.Equal(expected, Utility.Interpret<double>(source));
+    }
+
+    [Fact]
+    public void TestVisitCall_CallNativeFunction_ShouldCallFine()
+    {
+        string source = """
+print typeof(nil);
+""";
+
+        string[] expected = ["$nil$"];
+
+        Assert.Equal(expected, Utility.Interpret<string>(source));
+    }
+
+    [Fact]
+    public void TestVisitCall_IncorrectArgumentCount_ShouldThrowException()
+    {
+        string source = """
+typeof(1, 2, 3);
+""";
+
+        var ex = Assert.Throws<ArgumentCountMismatchException>(() => Utility.Interpret(source));
+        Assert.Equal(3, ex.ActualCount);
+        Assert.Equal("<native fn typeof>", ex.Callee.ToString());
+    }
+
+    [Fact]
+    public void TestVisitCall_CalleeIsNotCallable_ShouldThrowException()
+    {
+        string source = """
+typeof(1)("hello");
+""";
+
+        var ex = Assert.Throws<CallableExpectedException>(() => Utility.Interpret(source));
+        Assert.Contains("You can only call functions and classes", ex.Message);
     }
 }

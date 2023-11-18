@@ -1,19 +1,36 @@
 using Lox.Core;
+using Lox.Visitors.Interpreters.Callables;
 
-namespace Lox.Visitors.Interpreters.Environemnts;
+namespace Lox.Visitors.Interpreters.Environments;
 
 public class LoxEnvironment : ILoxEnvironment
 {
+    private static LoxEnvironment BuildGlobalEnvironment()
+    {
+        LoxEnvironment global = new();
+        global.TryDefine("clock", new Clock());
+        global.TryDefine("typeof", new TypeOf());
+        return global;
+    }
+    private static readonly Lazy<LoxEnvironment> s_globalEnvironment = new(BuildGlobalEnvironment, LazyThreadSafetyMode.ExecutionAndPublication);
+    public static LoxEnvironment GlobalEnvironment => s_globalEnvironment.Value;
     private readonly LoxEnvironment? _enclosing;
-    private readonly Dictionary<string, object?> _values = new();
-    private bool IsGlobal => _enclosing is null;
+    private readonly Dictionary<string, object?> _values = [];
+
+    private readonly int _depth;
 
     public LoxEnvironment() : this(null) { }
-    public LoxEnvironment(LoxEnvironment? enclosing) => _enclosing = enclosing;
+    public LoxEnvironment(LoxEnvironment? enclosing)
+    {
+        _enclosing = enclosing;
+        _depth = (_enclosing?._depth ?? -1) + 1;
+    }
+
+    private bool CanDefine(string name) => _depth <= 1 || (!_values.ContainsKey(name) && _enclosing!.CanDefine(name));
 
     public bool TryDefine(string name, object? value)
     {
-        if (!(_enclosing?.IsGlobal ?? true) && _enclosing._values.ContainsKey(name))
+        if (_values.ContainsKey(name) || !(_enclosing?.CanDefine(name) ?? true))
         {
             return false;
         }

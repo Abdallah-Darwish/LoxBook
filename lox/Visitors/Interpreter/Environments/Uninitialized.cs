@@ -1,4 +1,4 @@
-namespace Lox.Visitors.Interpreters.Environemnts;
+namespace Lox.Visitors.Interpreters.Environments;
 
 public class Uninitialized
 {

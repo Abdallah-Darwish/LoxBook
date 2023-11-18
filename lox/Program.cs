@@ -3,7 +3,8 @@ using Lox.Visitors;
 using Lox.Parsers;
 using Lox.Scanners;
 using Lox.Visitors.Interpreters;
-using Lox.Visitors.Interpreters.Environemnts;
+using Lox.Visitors.Interpreters.Environments;
+
 string x = """"
 for(var i = 0; i < 5; i = i + 1)
 {

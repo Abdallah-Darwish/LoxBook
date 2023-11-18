@@ -132,7 +132,7 @@ public class Parser : IParser
             _scanner.GetAndMoveNext(TokenType.Semicolon);
         }
 
-        Expression cond = null;
+        Expression cond;
         if (_scanner.Current.Type != TokenType.Semicolon)
         {
             cond = ParseExpressionStatement().Expression;
@@ -314,9 +314,54 @@ public class Parser : IParser
             return new UnaryExpression(op, ParseUnary());
         }
 
-        return ParsePrimary();
+        return ParseCall();
     }
+    private Expression ParseCall()
+    {
+        var callee = ParsePrimary();
+        while (true)
+        {
+            // Its done this way to handle syntaxes like Func(1, 2)(3, 4)(5, 6)
+            if (_scanner.Current.Type == TokenType.LeftParentheses)
+            {
+                if (callee is LiteralExpression literal)
+                {
+                    throw new ParserException("Literals are not callable", literal.Value);
+                }
+                var (rightParentheses, arguemnts) = ParseArguments();
+                callee = new CallExpression(callee, rightParentheses, arguemnts);
+            }
+            else
+            {
+                break;
+            }
+        }
+        return callee;
+    }
+    private (Token RightParentheses, Expression[] Arguemnts) ParseArguments()
+    {
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+        Expression[] args;
+        if (_scanner.Current.Type != TokenType.RightParentheses)
+        {
+            Stack<Expression> argsStack = [];
+            var commaArgs = ParseComma();
+            while (commaArgs is BinaryExpression binary && binary.Operator.Type == TokenType.Comma)
+            {
+                argsStack.Push(binary.Right);
+                commaArgs = binary.Left;
+            }
+            argsStack.Push(commaArgs);
+            args = new Expression[argsStack.Count];
+            for (int i = 0; argsStack.Count != 0; args[i++] = argsStack.Pop()) ;
+        }
+        else
+        {
+            args = [];
+        }
 
+        return (_scanner.GetAndMoveNext(TokenType.RightParentheses), args);
+    }
     private Expression ParsePrimary()
     {
         if (_scanner.Current.Type is TokenType.Number or TokenType.String or TokenType.True or TokenType.False

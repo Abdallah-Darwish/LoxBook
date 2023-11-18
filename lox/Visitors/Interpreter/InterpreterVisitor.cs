@@ -1,16 +1,18 @@
 using System.Collections;
 using Lox.Core;
-using Lox.Visitors.Interpreters.Environemnts;
+using Lox.Visitors.Interpreters.Callables;
+using Lox.Visitors.Interpreters.Environments;
+using Lox.Visitors.Interpreters.Exceptions;
 namespace Lox.Visitors.Interpreters;
 
 public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
 {
     private readonly IOutputSync<object?> _outputSync;
     private ILoxEnvironment _environment;
-    public Interpreter(ILoxEnvironment environment, IOutputSync<object?> outputSync)
+    public Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSync)
     {
         _outputSync = outputSync;
-        _environment = environment;
+        _environment = new LoxEnvironment(globals);
     }
     private static bool IsTruthy(object? obj)
     {
@@ -189,4 +191,19 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
     }
 
     public void Visit(BreakStatement s) => throw new BreakException(s);
+
+    public object? Visit(CallExpression e)
+    {
+        var callee = e.Callee.Accept(this);
+        if (callee is not ILoxCallable loxCallee)
+        {
+            throw new CallableExpectedException(e.RightParentheses);
+        }
+        if (e.Arguments.Length != loxCallee.Arity)
+        {
+            throw new ArgumentCountMismatchException(e.Arguments.Length, loxCallee);
+        }
+        var args = e.Arguments.Select(a => a.Accept(this)).ToArray();
+        return loxCallee.Call(this, args);
+    }
 }
