@@ -211,4 +211,33 @@ min(1,);
         Assert.Contains("Expected a token of type LeftParentheses instead found token of type RightParentheses at Line", ex.Message);
         // This error is confusing but honestly I don't want to fix it and I want to focus on finishing the book
     }
+
+    [Fact]
+    public void ParseReturn_NotInsideFunction_ThrowsException()
+    {
+        string source = """
+return 1;
+""";
+        var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
+        Assert.Contains("No enclosing function out of which to return", ex.Message);
+    }
+
+    [Fact]
+    public void ParseFunction_NormalFunction_ParsedSuccessfuly()
+    {
+        string source = """
+fun greet(name)
+{
+    print "hello " + name;
+    return "greeted " + name;
+}
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ [ [ [ min ( 1 , 2 ) ] ( 3 , 4 ) ] ( ) ] }
+""";
+
+        Assert.Equal(expected, stmt);
+
+    }
 }
