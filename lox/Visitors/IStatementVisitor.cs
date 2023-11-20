@@ -11,6 +11,8 @@ public interface IStatementVisitor
     void Visit(IfStatement s);
     void Visit(WhileStatement s);
     void Visit(BreakStatement s);
+    void Visit(FunctionStatement s);
+    void Visit(ReturnStatement s);
 }
 public interface IStatementVisitor<T>
 {
@@ -21,4 +23,6 @@ public interface IStatementVisitor<T>
     T Visit(IfStatement s);
     T Visit(WhileStatement s);
     T Visit(BreakStatement s);
+    T Visit(FunctionStatement s);
+    T Visit(ReturnStatement s);
 }

@@ -1,8 +1,7 @@
 using Lox.Core;
 namespace Lox.Visitors.Interpreters.Exceptions;
 
-public class BreakException : RuntimeException
+public class BreakException(BreakStatement sourceStatement) : RuntimeException
 {
-    public BreakStatement SourceStatement { get; }
-    public BreakException(BreakStatement sourceStatement) => SourceStatement = sourceStatement;
+    public BreakStatement SourceStatement { get; } = sourceStatement;
 }

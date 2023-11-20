@@ -8,6 +8,8 @@ public class Parser : IParser
     private IScanner _scanner;
     private int _loopDepth = 0;
     private bool IsInLoopRule => _loopDepth > 0;
+    private int _functionDepth = 0;
+    private bool IsInFunctionBody => _functionDepth > 0;
     private bool _disposed;
     private void CheckDisposed()
     {
@@ -52,6 +54,7 @@ public class Parser : IParser
         return _scanner.Current.Type switch
         {
             TokenType.Var => ParseVariableDeclaration(),
+            TokenType.Fun => ParseFunctionDeclaration(),
             _ => ParseStatement()
         };
     }
@@ -69,6 +72,39 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.Semicolon);
         return new(id, init);
     }
+    private FunctionStatement ParseFunction()
+    {
+        var id = _scanner.GetAndMoveNext(TokenType.Identifier);
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+
+        List<Token> parameters = new();
+        bool isFirstParam = true;
+        while (_scanner.Current.Type != TokenType.RightParentheses)
+        {
+            if (isFirstParam)
+            {
+                _scanner.GetAndMoveNext(TokenType.Comma);
+                isFirstParam = false;
+            }
+            parameters.Add(_scanner.GetAndMoveNext(TokenType.Identifier));
+        }
+        _scanner.GetAndMoveNext(TokenType.RightParentheses);
+
+        _functionDepth++;
+        try
+        {
+            return new(id, parameters, ParseBlock());
+        }
+        finally
+        {
+            _functionDepth--;
+        }
+    }
+    private FunctionStatement ParseFunctionDeclaration()
+    {
+        _scanner.GetAndMoveNext(TokenType.Fun);
+        return ParseFunction();
+    }
     private Statement ParseStatement() => _scanner.Current.Type switch
     {
         TokenType.Print => ParsePrint(),
@@ -77,8 +113,24 @@ public class Parser : IParser
         TokenType.While => ParseWhile(),
         TokenType.For => ParseFor(),
         TokenType.Break => ParseBreak(),
+        TokenType.Return => ParseReturn(),
         _ => ParseExpressionStatement()
     };
+    private ReturnStatement ParseReturn()
+    {
+        if (!IsInFunctionBody)
+        {
+            throw new ParserException("No enclosing function out of which to return.", _scanner.Current);
+        }
+        var ret = _scanner.GetAndMoveNext(TokenType.Return);
+        Expression? val = null;
+        if (_scanner.Current.Type != TokenType.Semicolon)
+        {
+            val = ParseExpression();
+        }
+        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        return new(ret, val);
+    }
     private BreakStatement ParseBreak()
     {
         if (!IsInLoopRule)

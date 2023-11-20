@@ -78,6 +78,10 @@ public class StatementAstPrinter : IStatementVisitor<string>
     public string Visit(WhileStatement s) => Parenthesize("while", s.Condition, s.Body);
 
     public string Visit(BreakStatement s) => Parenthesize("break");
+
+    public string Visit(FunctionStatement s) => Parenthesize(["fun", s.Name, "(", .. s.Parameters, ")", .. s.Body]);
+
+    public string Visit(ReturnStatement s) => Parenthesize(s.Return, s.Value);
 }
 
 public class ConsoleStatementAstPrinter : IStatementVisitor
@@ -98,4 +102,8 @@ public class ConsoleStatementAstPrinter : IStatementVisitor
     public void Visit(WhileStatement s) => Print(s);
 
     public void Visit(BreakStatement s) => Print(s);
+
+    public void Visit(FunctionStatement s) => Print(s);
+
+    public void Visit(ReturnStatement s) => Print(s);
 }

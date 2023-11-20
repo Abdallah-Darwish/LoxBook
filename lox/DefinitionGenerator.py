@@ -146,6 +146,8 @@ Block      : IReadOnlyList<$base$> Statements
 If         : Expression Condition, $base$ Then, $base$? Else
 While      : Expression Condition, $base$ Body
 Break      :
+Function   : Token Name, IReadOnlyList<Token> Parameters, IReadOnlyList<$base$> Body
+Return     : Token Return, Expression? Value
 """
 statements = Ast('Core', 'Statement', statements_ast_txt, VisitorVariant.ALL)
 

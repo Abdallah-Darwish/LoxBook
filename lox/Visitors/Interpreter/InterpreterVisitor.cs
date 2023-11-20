@@ -5,15 +5,12 @@ using Lox.Visitors.Interpreters.Environments;
 using Lox.Visitors.Interpreters.Exceptions;
 namespace Lox.Visitors.Interpreters;
 
-public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
+public class Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSync) : IExpressionVisitor<object?>, IStatementVisitor
 {
-    private readonly IOutputSync<object?> _outputSync;
-    private ILoxEnvironment _environment;
-    public Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSync)
-    {
-        _outputSync = outputSync;
-        _environment = new LoxEnvironment(globals);
-    }
+    private readonly IOutputSync<object?> _outputSync = outputSync;
+    internal readonly ILoxEnvironment _globals = globals;
+    private ILoxEnvironment _environment = new LoxEnvironment(globals);
+
     private static bool IsTruthy(object? obj)
     {
         if (obj is null) return false;
@@ -149,13 +146,15 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
         return val;
     }
 
-    public void Visit(BlockStatement s)
+    public void Visit(BlockStatement s) => ExecuteBlock(s.Statements, new LoxEnvironment(_environment as LoxEnvironment));
+
+    internal void ExecuteBlock(IEnumerable<Statement> statements, LoxEnvironment environment)
     {
         var prevEnv = _environment;
         try
         {
-            _environment = new LoxEnvironment(prevEnv as LoxEnvironment);
-            foreach (var stmt in s.Statements)
+            _environment = environment;
+            foreach (var stmt in statements)
             {
                 stmt.Accept(this);
             }
@@ -206,4 +205,8 @@ public class Interpreter : IExpressionVisitor<object?>, IStatementVisitor
         var args = e.Arguments.Select(a => a.Accept(this)).ToArray();
         return loxCallee.Call(this, args);
     }
+
+    public void Visit(FunctionStatement s) => _environment.Define(s.Name, new LoxFunction(s));
+
+    public void Visit(ReturnStatement s) => throw new ReturnException(s.Value?.Accept(this), s);
 }
