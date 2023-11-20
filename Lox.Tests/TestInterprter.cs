@@ -93,7 +93,6 @@ for(var i = 0; i < 5; i = i + 1)
         string source = """
 print typeof(nil);
 """;
-
         string[] expected = ["$nil$"];
 
         Assert.Equal(expected, Utility.Interpret<string>(source));
@@ -120,5 +119,27 @@ typeof(1)("hello");
 
         var ex = Assert.Throws<CallableExpectedException>(() => Utility.Interpret(source));
         Assert.Contains("You can only call functions and classes", ex.Message);
+    }
+
+    [Fact]
+    public void TestVisitCallAndFunction_FunctionHaveSameVariableNamesAsOuterScope_FunctionVariablesShadowOuterVariables()
+    {
+        string source = """
+fun Greet(name)
+{
+    var userName = "error";
+    fun BuildMessage(userName)
+    {
+        return "Hello " + userName;
+    }
+    print "Greeting " + name;
+    return BuildMessage(name);
+}
+print Greet("Abdallah");
+""";
+
+        string[] expected = ["Greeting Abdallah", "Hello Abdallah"];
+
+        Assert.Equal(expected, Utility.Interpret<string>(source));
     }
 }

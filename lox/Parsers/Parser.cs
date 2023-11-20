@@ -77,11 +77,11 @@ public class Parser : IParser
         var id = _scanner.GetAndMoveNext(TokenType.Identifier);
         _scanner.GetAndMoveNext(TokenType.LeftParentheses);
 
-        List<Token> parameters = new();
+        List<Token> parameters = [];
         bool isFirstParam = true;
         while (_scanner.Current.Type != TokenType.RightParentheses)
         {
-            if (isFirstParam)
+            if (!isFirstParam)
             {
                 _scanner.GetAndMoveNext(TokenType.Comma);
                 isFirstParam = false;
@@ -120,7 +120,7 @@ public class Parser : IParser
     {
         if (!IsInFunctionBody)
         {
-            throw new ParserException("No enclosing function out of which to return.", _scanner.Current);
+            throw new ParserException("No enclosing function or method out of which to return.", _scanner.Current);
         }
         var ret = _scanner.GetAndMoveNext(TokenType.Return);
         Expression? val = null;

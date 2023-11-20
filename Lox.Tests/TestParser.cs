@@ -219,25 +219,55 @@ min(1,);
 return 1;
 """;
         var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
-        Assert.Contains("No enclosing function out of which to return", ex.Message);
+        Assert.Contains("No enclosing function or method out of which to return", ex.Message);
     }
 
     [Fact]
     public void ParseFunction_NormalFunction_ParsedSuccessfuly()
     {
         string source = """
-fun greet(name)
+fun Greet(name)
 {
-    print "hello " + name;
-    return "greeted " + name;
+    print "Hello " + name;
+    return "Greeted " + name;
 }
 """;
         var stmt = Utility.ParseAsString(source);
         var expected = """
-{ [ [ [ min ( 1 , 2 ) ] ( 3 , 4 ) ] ( ) ] }
+{ fun Greet ( name )
+    { print [ "Hello " + name ] }
+    { return [ "Greeted " + name ] }
+}
 """;
 
         Assert.Equal(expected, stmt);
+    }
 
+    [Fact]
+    public void ParseFunction_NestedFunctions_InnerFunctionIsStatementInOuterOne()
+    {
+        string source = """
+fun Greet(name)
+{
+    fun BuildMessage()
+    {
+        return "Hello " + name;
+    }
+    print BuildMessage();
+    return "ok";
+}
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ fun Greet ( name )
+    { fun BuildMessage ( )
+        { return [ "Hello " + name ] }
+    }
+    { print [ BuildMessage ( ) ] }
+    { return "ok" }
+}
+""";
+
+        Assert.Equal(expected, stmt);
     }
 }
