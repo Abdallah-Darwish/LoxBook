@@ -28,7 +28,7 @@ public class ExpressionAstPrinter : IExpressionVisitor<string>
                     {
                         res.AppendLine();
                     }
-                    res.AppendLine(stmt.Accept(StatementPrinter));
+                    res.AppendLine(stmt.Accept(StatementPrinter ?? throw new InvalidOperationException($"Please set {nameof(StatementPrinter)} before visiting statements.")));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(ops));

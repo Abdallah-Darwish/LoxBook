@@ -32,7 +32,7 @@ public static class Utility
         var stmt = Parse(source);
         if (stmt is null) { return null; }
         var exprPrinter = new ExpressionAstPrinter();
-        var stmtPrinter = new StatementAstPrinter(exprPrinter);
+        var stmtPrinter = new StatementAstPrinter(exprPrinter, new ExpressionHasStatement());
         exprPrinter.StatementPrinter = stmtPrinter;
         return stmt.Accept(stmtPrinter);
     }

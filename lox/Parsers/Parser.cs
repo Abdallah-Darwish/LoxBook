@@ -5,7 +5,8 @@ namespace Lox.Parsers;
 public enum FunctionType
 {
     Function,
-    Method
+    Method,
+    Lambda
 }
 public class Parser : IParser
 {
@@ -104,10 +105,10 @@ public class Parser : IParser
             _functionDepth--;
         }
     }
-    private FunctionStatement ParseFunction()
+    private FunctionStatement ParseFunction(FunctionType type)
     {
-        var id = _scanner.GetAndMoveNext(TokenType.Identifier);
-        var (parameters, body) = ParseLambdaParametersAndBody();
+        var id = _scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration");
+        var (parameters, body) = ParseLambdaParametersAndBody(type);
         return new(id, parameters, body);
     }
     private FunctionStatement ParseFunctionDeclaration()
@@ -432,7 +433,7 @@ public class Parser : IParser
         if (_scanner.Current.Type == TokenType.Fun)
         {
             var fun = _scanner.GetAndMoveNext();
-            var (parameters, body) = ParseLambdaParametersAndBody();
+            var (parameters, body) = ParseLambdaParametersAndBody(FunctionType.Lambda);
             return new LambdaExpression(fun, parameters, body);
         }
         return ParsePrimary();

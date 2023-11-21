@@ -3,10 +3,11 @@ using System.Text;
 
 namespace Lox.Visitors;
 
-public class StatementAstPrinter(IExpressionVisitor<string> expressionPrinter) : IStatementVisitor<string>
+public class StatementAstPrinter(IExpressionVisitor<string> expressionPrinter, IExpressionVisitor<bool> expressionHasStatementVisitor) : IStatementVisitor<string>
 {
     const string IdentationChar = "    ";
     private readonly IExpressionVisitor<string> _expressionPrinter = expressionPrinter;
+    private readonly IExpressionVisitor<bool> _expressionHasStatementVisitor = expressionHasStatementVisitor;
     private string _indentation = string.Empty;
     public string Push() => _indentation += IdentationChar;
     public string Pop() => _indentation = _indentation[..^IdentationChar.Length];
@@ -17,7 +18,7 @@ public class StatementAstPrinter(IExpressionVisitor<string> expressionPrinter) :
         string sep = _indentation;
         res.Append(sep).Append('{');
         sep = " ";
-        var push = ops.Any(op => op is Statement or LambdaExpression);
+        var push = ops.Any(op => op is Statement) || ops.OfType<Expression>().Any(e => e.Accept(_expressionHasStatementVisitor));
         if (push)
         {
             Push();
@@ -35,8 +36,20 @@ public class StatementAstPrinter(IExpressionVisitor<string> expressionPrinter) :
                     sep = " ";
                     break;
                 case Expression expr:
-                    res.Append(sep).Append(expr.Accept(_expressionPrinter));
-                    sep = " ";
+                    var exprTxt = expr.Accept(_expressionPrinter);
+                    res.Append(sep).Append(exprTxt);
+                    if (exprTxt.Contains('\n'))
+                    {
+                        if (res[^1] != '\n')
+                        {
+                            res.AppendLine();
+                        }
+                        sep = _indentation;
+                    }
+                    else
+                    {
+                        sep = " ";
+                    }
                     break;
                 case Statement stmt:
                     if (res[^1] != '\n')
@@ -80,10 +93,10 @@ public class StatementAstPrinter(IExpressionVisitor<string> expressionPrinter) :
     public string Visit(ReturnStatement s) => Parenthesize(s.Return, s.Value);
 }
 
-public class ConsoleStatementAstPrinter : IStatementVisitor
+public class ConsoleStatementAstPrinter(IStatementVisitor<string> statementPrinter) : IStatementVisitor
 {
-    private readonly IStatementVisitor<string> _statementPrinter;
-    public ConsoleStatementAstPrinter(IStatementVisitor<string> statementPrinter) => _statementPrinter = statementPrinter;
+    private readonly IStatementVisitor<string> _statementPrinter = statementPrinter;
+
     private void Print(Statement s) => Console.WriteLine(s.Accept(_statementPrinter));
     public void Visit(ExpressionStatement s) => Print(s);
 

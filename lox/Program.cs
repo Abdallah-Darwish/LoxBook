@@ -24,7 +24,7 @@ Scanner sc = new(new StringReader(x));
 Parser p = new(sc);
 TextOutputSync sync = new(Console.Out);
 Interpreter interpreter = new(new LoxEnvironment(), sync);
-ConsoleStatementAstPrinter printer = new(new StatementAstPrinter(new ExpressionAstPrinter()));
+ConsoleStatementAstPrinter printer = new(new StatementAstPrinter(new ExpressionAstPrinter(), new ExpressionHasStatement()));
 ParserAdapter ad = new(p, new IStatementVisitor[] { printer, interpreter });
 ad.Visit();
 
