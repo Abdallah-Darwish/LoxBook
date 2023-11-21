@@ -257,12 +257,12 @@ public class Scanner : IScanner
         return current;
     }
 
-    public Token GetAndMoveNext(TokenType expectedType)
+    public Token GetAndMoveNext(TokenType expectedType, string? calrifyingMessage = null)
     {
         var current = Current;
         if (current.Type != expectedType)
         {
-            throw new UnexpectedTokenException(current, expectedType);
+            throw new UnexpectedTokenException(current, expectedType, calrifyingMessage);
         }
         MoveNext();
         return current;

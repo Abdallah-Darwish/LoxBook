@@ -2,7 +2,11 @@ using Lox.Core;
 using Lox.Scanners;
 
 namespace Lox.Parsers;
-
+public enum FunctionType
+{
+    Function,
+    Method
+}
 public class Parser : IParser
 {
     private IScanner _scanner;
@@ -13,10 +17,11 @@ public class Parser : IParser
     private bool _disposed;
     private void CheckDisposed()
     {
-        if (_disposed)
+        if (!_disposed)
         {
-            throw new ObjectDisposedException(GetType().FullName);
+            return;
         }
+        throw new ObjectDisposedException(GetType().FullName);
     }
 
     public bool IsExhausted
@@ -62,20 +67,20 @@ public class Parser : IParser
     {
         _scanner.GetAndMoveNext(TokenType.Var);
 
-        var id = _scanner.GetAndMoveNext(TokenType.Identifier);
+        var id = _scanner.GetAndMoveNext(TokenType.Identifier, "variable declaration");
         Expression? init = null;
         if (_scanner.Current.Type == TokenType.Equal)
         {
             _scanner.GetAndMoveNext();
             init = ParseExpression();
         }
-        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        _scanner.GetAndMoveNext(TokenType.Semicolon, "variable declaration");
         return new(id, init);
     }
-    private FunctionStatement ParseFunction()
+    private FunctionStatement ParseFunction(FunctionType type)
     {
-        var id = _scanner.GetAndMoveNext(TokenType.Identifier);
-        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+        var id = _scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration");
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses, $"{type} name");
 
         List<Token> parameters = [];
         bool isFirstParam = true;
@@ -83,12 +88,12 @@ public class Parser : IParser
         {
             if (!isFirstParam)
             {
-                _scanner.GetAndMoveNext(TokenType.Comma);
+                _scanner.GetAndMoveNext(TokenType.Comma, $"{type} parameter");
                 isFirstParam = false;
             }
-            parameters.Add(_scanner.GetAndMoveNext(TokenType.Identifier));
+            parameters.Add(_scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration"));
         }
-        _scanner.GetAndMoveNext(TokenType.RightParentheses);
+        _scanner.GetAndMoveNext(TokenType.RightParentheses, $"{type} parameter list");
 
         _functionDepth++;
         try
@@ -102,8 +107,8 @@ public class Parser : IParser
     }
     private FunctionStatement ParseFunctionDeclaration()
     {
-        _scanner.GetAndMoveNext(TokenType.Fun);
-        return ParseFunction();
+        _scanner.GetAndMoveNext(TokenType.Fun, $"{FunctionType.Function} declaration");
+        return ParseFunction(FunctionType.Function);
     }
     private Statement ParseStatement() => _scanner.Current.Type switch
     {
@@ -128,7 +133,7 @@ public class Parser : IParser
         {
             val = ParseExpression();
         }
-        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        _scanner.GetAndMoveNext(TokenType.Semicolon, "return keyword");
         return new(ret, val);
     }
     private BreakStatement ParseBreak()
@@ -138,15 +143,15 @@ public class Parser : IParser
             throw new ParserException("No enclosing loop out of which to break.", _scanner.Current);
         }
         _scanner.GetAndMoveNext(TokenType.Break);
-        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        _scanner.GetAndMoveNext(TokenType.Semicolon, "break statement");
         return new BreakStatement();
     }
     private IfStatement ParseIf()
     {
         _scanner.GetAndMoveNext(TokenType.If);
-        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses, "if statement");
         var condition = ParseExpression();
-        _scanner.GetAndMoveNext(TokenType.RightParentheses);
+        _scanner.GetAndMoveNext(TokenType.RightParentheses, "if statement condition");
         var then = ParseStatement();
         Statement? els = null;
         if (_scanner.Current.Type == TokenType.Else)
@@ -158,9 +163,9 @@ public class Parser : IParser
     private WhileStatement ParseWhile()
     {
         _scanner.GetAndMoveNext(TokenType.While);
-        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses, "while statement");
         var condition = ParseExpression();
-        _scanner.GetAndMoveNext(TokenType.RightParentheses);
+        _scanner.GetAndMoveNext(TokenType.RightParentheses, "while statement condition");
 
         var body = ParseLoopBody();
         return new WhileStatement(condition, body);
@@ -168,7 +173,7 @@ public class Parser : IParser
     private Statement ParseFor()
     {
         _scanner.GetAndMoveNext(TokenType.For);
-        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses, "for statement");
 
         Statement? init = null;
         if (_scanner.Current.Type == TokenType.Var)
@@ -181,7 +186,7 @@ public class Parser : IParser
         }
         else
         {
-            _scanner.GetAndMoveNext(TokenType.Semicolon);
+            _scanner.GetAndMoveNext(TokenType.Semicolon, "for statement or a varaible declaration or an expression");
         }
 
         Expression cond;
@@ -192,7 +197,7 @@ public class Parser : IParser
         else
         {
             cond = new LiteralExpression(new Token(-1, -1, TokenType.True, null));
-            _scanner.GetAndMoveNext(TokenType.Semicolon);
+            _scanner.GetAndMoveNext(TokenType.Semicolon, "for statement condition or an expression");
         }
 
         ExpressionStatement? iter = null;
@@ -200,7 +205,7 @@ public class Parser : IParser
         {
             iter = new(ParseExpression());
         }
-        _scanner.GetAndMoveNext(TokenType.RightParentheses);
+        _scanner.GetAndMoveNext(TokenType.RightParentheses, "for statement iterator");
 
         var body = ParseLoopBody();
         Statement whileBody = iter is null ? body : new BlockStatement(new Statement[] { body, iter });
@@ -217,7 +222,7 @@ public class Parser : IParser
     private IReadOnlyList<Statement> ParseBlock()
     {
         _scanner.GetAndMoveNext(TokenType.LeftBrace);
-        List<Statement> body = new();
+        List<Statement> body = [];
         while (_scanner.Current.Type != TokenType.RightBrace)
         {
             body.Add(ParseDeclaration());
@@ -229,14 +234,14 @@ public class Parser : IParser
     {
         _scanner.GetAndMoveNext();
         PrintStatement print = new(ParseExpression());
-        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        _scanner.GetAndMoveNext(TokenType.Semicolon, "print statement");
         return print;
     }
 
     private ExpressionStatement ParseExpressionStatement()
     {
         ExpressionStatement expr = new(ParseExpression());
-        _scanner.GetAndMoveNext(TokenType.Semicolon);
+        _scanner.GetAndMoveNext(TokenType.Semicolon, "expression");
         return expr;
     }
 
@@ -281,7 +286,7 @@ public class Parser : IParser
 
         _scanner.GetAndMoveNext();
         var left = ParseOr();
-        _scanner.GetAndMoveNext(TokenType.Colon);
+        _scanner.GetAndMoveNext(TokenType.Colon, "ternary operator left hand");
 
         var right = ParseOr();
         return new TernaryExpression(condition, left, right);
@@ -392,7 +397,7 @@ public class Parser : IParser
     }
     private (Token RightParentheses, Expression[] Arguemnts) ParseArguments()
     {
-        _scanner.GetAndMoveNext(TokenType.LeftParentheses);
+        _scanner.GetAndMoveNext(TokenType.LeftParentheses, "callee");
         Expression[] args;
         if (_scanner.Current.Type != TokenType.RightParentheses)
         {
@@ -412,7 +417,7 @@ public class Parser : IParser
             args = [];
         }
 
-        return (_scanner.GetAndMoveNext(TokenType.RightParentheses), args);
+        return (_scanner.GetAndMoveNext(TokenType.RightParentheses, "call arguments"), args);
     }
     private Expression ParsePrimary()
     {

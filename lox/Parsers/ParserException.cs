@@ -2,12 +2,7 @@ using Lox.Core;
 
 namespace Lox.Parsers;
 
-public class ParserException : LoxException
+public class ParserException(string message, Token? token = null) : LoxException(message)
 {
-    public Token? Token { get; }
-
-    public ParserException(string message, Token? token = null) : base(message)
-    {
-        Token = token;
-    }
+    public Token? Token { get; } = token;
 }
