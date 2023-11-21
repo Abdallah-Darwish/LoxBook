@@ -50,6 +50,12 @@ public static class Utility
         return sync.Buffer;
     }
 
+    public static IReadOnlyList<string?> InterpretToString(string source)
+    {
+        var objList = Interpret(source);
+        return objList.Select(i => i?.ToString()).ToArray();
+    }
+
     public static IReadOnlyList<T> Interpret<T>(string source)
     {
         var objList = Interpret(source);

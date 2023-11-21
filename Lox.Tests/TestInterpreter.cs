@@ -142,4 +142,40 @@ print Greet("Abdallah");
 
         Assert.Equal(expected, Utility.Interpret<string>(source));
     }
+
+    [Fact]
+    public void TestVisitLambda_DefineAndCallLambdaInPlace_CanBeCalled()
+    {
+        string source = """
+print fun(name)
+{
+    return fun(userName)
+    {
+        return "Hello " + userName;
+    }(name);
+}("Abdallah");
+""";
+
+        string[] expected = ["Hello Abdallah"];
+
+        Assert.Equal(expected, Utility.Interpret<string>(source));
+    }
+
+    [Fact]
+    public void TestVisitLambda_AssignLambdaToVariable_CanCallVariable()
+    {
+        string source = """
+var fn = fun(name)
+{
+    return "Hello " + name;
+};
+print fn("Abdallah");
+print fn;
+""";
+
+        var result = Utility.InterpretToString(source);
+        string[] expected = ["Hello Abdallah", "<fn $lambda0_9$>"];
+
+        Assert.Equal(expected, result);
+    }
 }

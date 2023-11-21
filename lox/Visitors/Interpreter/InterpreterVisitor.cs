@@ -117,7 +117,7 @@ public class Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSyn
         };
     }
 
-    public object? Visit(GroupingExpression e) => e.Accept(this);
+    public object? Visit(GroupingExpression e) => e.Expression.Accept(this);
 
     public object? Visit(LiteralExpression e) => e.Value.Value;
 

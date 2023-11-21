@@ -176,7 +176,7 @@ for(var i = "hehe"; i or 2;)
     }
 
     [Fact]
-    public void ParseCall_NestedFunctionCalls_ArgsShouldBeOfTypeCall()
+    public void TestParseCall_NestedFunctionCalls_ArgsShouldBeOfTypeCall()
     {
         string source = """
 min(max(1, 2), sqrt(1, -pow(5, 6), floor(10)), !gcd(505, 506, "hello", 1 + 2), clock());
@@ -190,7 +190,7 @@ min(max(1, 2), sqrt(1, -pow(5, 6), floor(10)), !gcd(505, 506, "hello", 1 + 2), c
     }
 
     [Fact]
-    public void ParseCall_AggregateFunctionCalls_CalleeShouldBeCallExpression()
+    public void TestParseCall_AggregateFunctionCalls_CalleeShouldBeCallExpression()
     {
         string source = """
 min(1, 2)(3, 4)();
@@ -204,7 +204,7 @@ min(1, 2)(3, 4)();
     }
 
     [Fact]
-    public void ParseCall_AdditionalComma_ThrowsException()
+    public void TestParseCall_AdditionalComma_ThrowsException()
     {
         string source = """
 min(1,);
@@ -215,7 +215,7 @@ min(1,);
     }
 
     [Fact]
-    public void ParseReturn_NotInsideFunction_ThrowsException()
+    public void TestParseReturn_NotInsideFunction_ThrowsException()
     {
         string source = """
 return 1;
@@ -225,7 +225,7 @@ return 1;
     }
 
     [Fact]
-    public void ParseFunction_NormalFunction_ParsedSuccessfuly()
+    public void TestParseFunction_NormalFunction_ParsedSuccessfuly()
     {
         string source = """
 fun Greet(name)
@@ -246,7 +246,7 @@ fun Greet(name)
     }
 
     [Fact]
-    public void ParseFunction_NestedFunctions_InnerFunctionIsStatementInOuterOne()
+    public void TestParseFunction_NestedFunctions_InnerFunctionIsStatementInOuterOne()
     {
         string source = """
 fun Greet(name)
@@ -274,7 +274,7 @@ fun Greet(name)
     }
 
     [Fact]
-    public void ParseFunction_Lambda_CanAppearInExpressionPlace()
+    public void TestParseLambda_LambdaWithAssignment_CanAppearInExpressionPlace()
     {
         string source = """
 var x = fun (name)

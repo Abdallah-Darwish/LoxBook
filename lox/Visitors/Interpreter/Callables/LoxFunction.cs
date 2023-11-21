@@ -27,4 +27,5 @@ public class LoxFunction(FunctionStatement func) : ILoxCallable
         }
         return null;
     }
+    public override string ToString() => $"<fn {_func.Name.Text}>";
 }

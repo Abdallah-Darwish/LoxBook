@@ -249,7 +249,7 @@ public class Parser : IParser
         ExpressionStatement expr = new(ParseExpression());
         if (expr.Expression is LambdaExpression lambdaExpression)
         {
-            throw new ParserException("Lambdas can't appear as a standalone statements.", lambdaExpression.Fun);
+            throw new ParserException("Lambdas can't be used as a standalone statements.", lambdaExpression.Fun);
         }
         _scanner.GetAndMoveNext(TokenType.Semicolon, "expression");
         return expr;

@@ -16,7 +16,8 @@ public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
                     TokenType.True => true,
                     TokenType.False => false,
                     TokenType.String => Lexeme?[1..^1],
-                    TokenType.Number => double.Parse(Lexeme)
+                    TokenType.Number => double.Parse(Lexeme),
+                    TokenType.Identifier => Lexeme
                 };
             }
 
