@@ -12,8 +12,9 @@ public class TestParser
 1 == 2, x = 1 == 3, y = z;
 """;
         var stmt = Utility.ParseAsString(source);
+        var expected = """{ [ [ [ 1 == 2 ] , [ x = [ 1 == 3 ] ] ] , [ y = z ] ] }""";
 
-        Assert.Equal("{ [ [ [ 1 == 2 ] , [ x = [ 1 == 3 ] ] ] , [ y = z ] ] }", stmt);
+        Assert.Equal(expected, stmt);
     }
 
     [Fact]
@@ -23,8 +24,9 @@ public class TestParser
 x = 1 == 2 ? "HOW!" : "makes sense";
 """;
         var stmt = Utility.ParseAsString(source);
+        var expected = """{ [ x = [ [ 1 == 2 ] ? "HOW!" : "makes sense" ] ] }""";
 
-        Assert.Equal("""{ [ x = [ [ 1 == 2 ] ? "HOW!" : "makes sense" ] ] }""", stmt);
+        Assert.Equal(expected, stmt);
     }
 
     [Fact]
@@ -279,13 +281,15 @@ var x = fun (name)
 {
     print "Hello " + name;
 };
+x();
 """;
         var stmt = Utility.ParseAsString(source);
         var expected = """
 { var x = [ fun ( name )
-    { print [ "Hello " + name ] }
- ]
+        { print [ "Hello " + name ] }
+    ]
 }
+{ [ x ( ) ] }
 """;
 
         Assert.Equal(expected, stmt);

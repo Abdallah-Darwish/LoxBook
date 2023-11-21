@@ -2,22 +2,18 @@
 
 namespace Lox.Utilities;
 
-public class ParserAdapter
+public class ParserAdapter(IParser parser, ICollection<IStatementVisitor> visitors)
 {
-    private readonly IParser _parser;
-    private readonly ICollection<IStatementVisitor> _visitors;
-    public ParserAdapter(IParser parser, ICollection<IStatementVisitor> visitors)
-    {
-        _parser = parser;
-        _visitors = visitors;
-    }
+    private readonly IParser _parser = parser;
+    private readonly ICollection<IStatementVisitor> _visitors = visitors;
+
     public void Visit()
     {
-        for (var expr = _parser.Parse(); expr is not null; expr = _parser.Parse())
+        for (var stmt = _parser.Parse(); stmt is not null; stmt = _parser.Parse())
         {
             foreach (var visitor in _visitors)
             {
-                expr.Accept(visitor);
+                stmt.Accept(visitor);
             }
         }
     }

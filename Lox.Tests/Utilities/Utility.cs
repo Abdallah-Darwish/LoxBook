@@ -21,27 +21,31 @@ public static class Utility
 
     public static IParser MakeParser(string source) => new Parser(MakeScanner(source));
 
-    public static Statement? Parse(string source)
+    public static IReadOnlyList<Statement> Parse(string source)
     {
+        ParserBuffer buffer = new();
         using var parser = MakeParser(source);
-        return parser.Parse();
+        ParserAdapter ad = new(parser, [buffer]);
+        ad.Visit();
+        return buffer.Buffer;
     }
 
-    public static string? ParseAsString(string source)
+    public static string ParseAsString(string source)
     {
-        var stmt = Parse(source);
-        if (stmt is null) { return null; }
-        var exprPrinter = new ExpressionAstPrinter();
-        var stmtPrinter = new StatementAstPrinter(exprPrinter, new ExpressionHasStatement());
-        exprPrinter.StatementPrinter = stmtPrinter;
-        return stmt.Accept(stmtPrinter);
+        using var parser = MakeParser(source);
+        using var sw = new StringWriter();
+        var printer = new TextWriterAstPrinter(sw, new AstPrinter(new ExpressionHasStatement()));
+        ParserAdapter ad = new(parser, [printer]);
+        ad.Visit();
+        sw.Flush();
+        return sw.ToString().TrimEnd();
     }
 
     public static IReadOnlyList<object?> Interpret(string source)
     {
         var sync = new BufferOutputSync<object?>();
         using var parser = MakeParser(source);
-        ParserAdapter ad = new(parser, new IStatementVisitor[] { new Interpreter(LoxEnvironment.GlobalEnvironment, sync) });
+        ParserAdapter ad = new(parser, [new Interpreter(LoxEnvironment.GlobalEnvironment, sync)]);
         ad.Visit();
         return sync.Buffer;
     }
