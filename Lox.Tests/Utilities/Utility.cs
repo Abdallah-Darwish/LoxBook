@@ -31,8 +31,10 @@ public static class Utility
     {
         var stmt = Parse(source);
         if (stmt is null) { return null; }
-        var printer = new StatementAstPrinter(new ExpressionAstPrinter());
-        return stmt.Accept(printer);
+        var exprPrinter = new ExpressionAstPrinter();
+        var stmtPrinter = new StatementAstPrinter(exprPrinter);
+        exprPrinter.StatementPrinter = stmtPrinter;
+        return stmt.Accept(stmtPrinter);
     }
 
     public static IReadOnlyList<object?> Interpret(string source)

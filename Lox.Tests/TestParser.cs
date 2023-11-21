@@ -270,4 +270,26 @@ fun Greet(name)
 
         Assert.Equal(expected, stmt);
     }
+
+    [Fact]
+    public void ParseFunction_Lambda_CanAppearInExpressionPlace()
+    {
+        string source = """
+var x = fun (name)
+{
+    print "Hello " + name;
+    return "Greeted " + name;
+};
+x();
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ var x = [ fun ( name )
+    { print [ "Hello " + name ] }
+    { return [ "Greeted " + name ] }
+ ] }
+""";
+
+        Assert.Equal(expected, stmt);
+    }
 }

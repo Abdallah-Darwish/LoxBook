@@ -77,9 +77,8 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.Semicolon, "variable declaration");
         return new(id, init);
     }
-    private FunctionStatement ParseFunction(FunctionType type)
+    private (IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body) ParseLambdaParametersAndBody(FunctionType type)
     {
-        var id = _scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration");
         _scanner.GetAndMoveNext(TokenType.LeftParentheses, $"{type} name");
 
         List<Token> parameters = [];
@@ -98,12 +97,18 @@ public class Parser : IParser
         _functionDepth++;
         try
         {
-            return new(id, parameters, ParseBlock());
+            return (parameters, ParseBlock());
         }
         finally
         {
             _functionDepth--;
         }
+    }
+    private FunctionStatement ParseFunction()
+    {
+        var id = _scanner.GetAndMoveNext(TokenType.Identifier);
+        var (parameters, body) = ParseLambdaParametersAndBody();
+        return new(id, parameters, body);
     }
     private FunctionStatement ParseFunctionDeclaration()
     {
@@ -241,6 +246,10 @@ public class Parser : IParser
     private ExpressionStatement ParseExpressionStatement()
     {
         ExpressionStatement expr = new(ParseExpression());
+        if (expr.Expression is LambdaExpression lambdaExpression)
+        {
+            throw new ParserException("Lambdas can't appear as a standalone statements.", lambdaExpression.Fun);
+        }
         _scanner.GetAndMoveNext(TokenType.Semicolon, "expression");
         return expr;
     }
@@ -291,7 +300,6 @@ public class Parser : IParser
         var right = ParseOr();
         return new TernaryExpression(condition, left, right);
     }
-
 
     private Expression ParseOr()
     {
@@ -375,7 +383,7 @@ public class Parser : IParser
     }
     private Expression ParseCall()
     {
-        var callee = ParsePrimary();
+        var callee = ParseLambda();
         while (true)
         {
             // Its done this way to handle syntaxes like Func(1, 2)(3, 4)(5, 6)
@@ -418,6 +426,16 @@ public class Parser : IParser
         }
 
         return (_scanner.GetAndMoveNext(TokenType.RightParentheses, "call arguments"), args);
+    }
+    private Expression ParseLambda()
+    {
+        if (_scanner.Current.Type == TokenType.Fun)
+        {
+            var fun = _scanner.GetAndMoveNext();
+            var (parameters, body) = ParseLambdaParametersAndBody();
+            return new LambdaExpression(fun, parameters, body);
+        }
+        return ParsePrimary();
     }
     private Expression ParsePrimary()
     {

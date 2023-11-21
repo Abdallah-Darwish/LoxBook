@@ -46,3 +46,8 @@ public record class CallExpression(Expression Callee, Token RightParentheses, Ex
 {
     public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
+
+public record class LambdaExpression(Token Fun, IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body) : Expression
+{
+    public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
+}

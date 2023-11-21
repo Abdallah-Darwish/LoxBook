@@ -23,6 +23,13 @@ public class ExpressionAstPrinter : IExpressionVisitor<string>
                 case Expression expr:
                     res.Append(Separator).Append(expr.Accept(this));
                     break;
+                case Statement stmt:
+                    if (res[^1] != '\n')
+                    {
+                        res.AppendLine();
+                    }
+                    res.AppendLine(stmt.Accept(StatementPrinter));
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(ops));
 
@@ -60,4 +67,7 @@ public class ExpressionAstPrinter : IExpressionVisitor<string>
         expr.Add(")");
         return Parenthesize([.. expr]);
     }
+    public IStatementVisitor<string>? StatementPrinter { get; set; }
+
+    public string Visit(LambdaExpression e) => Parenthesize(["fun", "(", .. e.Parameters, ")", .. e.Body]);
 }

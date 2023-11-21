@@ -209,4 +209,11 @@ public class Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSyn
     public void Visit(FunctionStatement s) => _environment.Define(s.Name, new LoxFunction(s));
 
     public void Visit(ReturnStatement s) => throw new ReturnException(s.Value?.Accept(this), s);
+
+    public object? Visit(LambdaExpression e)
+    {
+        Token mangledName = new(e.Fun.Line, e.Fun.Column, TokenType.Identifier, $"$lambda{e.Fun.Line}_{e.Fun.Column}$");
+        Visit(new FunctionStatement(mangledName, e.Parameters, e.Body));
+        return _environment.Get(mangledName);
+    }
 }

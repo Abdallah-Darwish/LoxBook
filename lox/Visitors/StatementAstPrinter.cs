@@ -3,12 +3,11 @@ using System.Text;
 
 namespace Lox.Visitors;
 
-public class StatementAstPrinter : IStatementVisitor<string>
+public class StatementAstPrinter(IExpressionVisitor<string> expressionPrinter) : IStatementVisitor<string>
 {
     const string IdentationChar = "    ";
-    private readonly IExpressionVisitor<string> _expressionPrinter;
+    private readonly IExpressionVisitor<string> _expressionPrinter = expressionPrinter;
     private string _indentation = string.Empty;
-    public StatementAstPrinter(IExpressionVisitor<string> expressionPrinter) => _expressionPrinter = expressionPrinter;
     public string Push() => _indentation += IdentationChar;
     public string Pop() => _indentation = _indentation[..^IdentationChar.Length];
 
@@ -18,7 +17,7 @@ public class StatementAstPrinter : IStatementVisitor<string>
         string sep = _indentation;
         res.Append(sep).Append('{');
         sep = " ";
-        var push = ops.Any(op => op is Statement);
+        var push = ops.Any(op => op is Statement or LambdaExpression);
         if (push)
         {
             Push();
@@ -57,13 +56,10 @@ public class StatementAstPrinter : IStatementVisitor<string>
             bool setSep = sep == _indentation;
             Pop();
             if (setSep) { sep = _indentation; }
-
         }
         res.Append(sep).Append('}');
         return res.ToString();
     }
-
-
 
     public string Visit(ExpressionStatement s) => Parenthesize(s.Expression);
 
