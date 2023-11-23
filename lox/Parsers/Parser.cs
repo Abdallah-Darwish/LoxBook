@@ -15,7 +15,17 @@ public class Parser : IParser
     private bool IsInLoopRule => _loopDepth > 0;
     private int _functionDepth = 0;
     private bool IsInFunctionBody => _functionDepth > 0;
+    private readonly Stack<(int LoopDepth, int FunctionDepth)> _state = [];
+    private void PushState()
+    {
+        _state.Push((_loopDepth, _functionDepth));
+        _loopDepth = 0;
+        _functionDepth = 1;
+    }
+
+    private void PopState() => (_loopDepth, _functionDepth) = _state.Pop();
     private bool _disposed;
+
     private void CheckDisposed()
     {
         if (!_disposed)
@@ -95,14 +105,14 @@ public class Parser : IParser
         }
         _scanner.GetAndMoveNext(TokenType.RightParentheses, $"{type} parameter list");
 
-        _functionDepth++;
+        PushState();
         try
         {
             return (parameters, ParseBlock());
         }
         finally
         {
-            _functionDepth--;
+            PopState();
         }
     }
     private FunctionStatement ParseFunction(FunctionType type)

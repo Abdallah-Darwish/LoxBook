@@ -294,4 +294,20 @@ x();
 
         Assert.Equal(expected, stmt);
     }
+
+    [Fact]
+    public void TestParseBreak_InFunctionInsideLoop_ThrowsException()
+    {
+        string source = """
+while(1 < 10)
+{
+    fun fn()
+    {
+        break;
+    }
+}
+""";
+        var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
+        Assert.Contains("No enclosing loop out of which to break", ex.Message);
+    }
 }
