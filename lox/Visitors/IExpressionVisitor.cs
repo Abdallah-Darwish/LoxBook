@@ -2,6 +2,18 @@ using Lox.Core;
 
 namespace Lox.Visitors;
 
+public interface IExpressionVisitor
+{
+    void Visit(TernaryExpression e);
+    void Visit(BinaryExpression e);
+    void Visit(GroupingExpression e);
+    void Visit(LiteralExpression e);
+    void Visit(UnaryExpression e);
+    void Visit(VariableExpression e);
+    void Visit(AssignmentExpression e);
+    void Visit(CallExpression e);
+    void Visit(LambdaExpression e);
+}
 public interface IExpressionVisitor<T>
 {
     T Visit(TernaryExpression e);

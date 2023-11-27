@@ -1,5 +1,6 @@
 using Lox.Core;
 
+namespace Lox.Parsers;
 public interface IParser : IDisposable
 {
     bool IsExhausted { get; }
