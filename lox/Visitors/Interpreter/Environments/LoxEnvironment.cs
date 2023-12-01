@@ -1,84 +1,105 @@
 using Lox.Core;
 using Lox.Visitors.Interpreters.Callables;
+using Lox.Visitors.Resolvers;
 
 namespace Lox.Visitors.Interpreters.Environments;
 
 public class LoxEnvironment : ILoxEnvironment
 {
+    public static readonly IReadOnlyList<(Token Name, object? Value)> Globals = [(Token.FromIdentifier("clock"), new Clock()), (Token.FromIdentifier("typeof"), new TypeOf())];
     private static LoxEnvironment BuildGlobalEnvironment()
     {
         LoxEnvironment global = new();
-        global.TryDefine("clock", new Clock());
-        global.TryDefine("typeof", new TypeOf());
+        for (int i = 0; i < Globals.Count; i++)
+        {
+            global.Define(new(Globals[i].Name, i, 0), Globals[i].Value);
+        }
         return global;
     }
     private static readonly Lazy<LoxEnvironment> s_globalEnvironment = new(BuildGlobalEnvironment, LazyThreadSafetyMode.ExecutionAndPublication);
     public static LoxEnvironment GlobalEnvironment => s_globalEnvironment.Value;
-    private readonly LoxEnvironment? _enclosing;
-    private readonly Dictionary<string, object?> _values = [];
+    private readonly ILoxEnvironment? _enclosing;
+    private readonly List<object?> _values = [];
 
-    private readonly int _depth;
+    public int Depth { get; }
+    public int Count => _values.Count;
 
     public LoxEnvironment() : this(null) { }
-    public LoxEnvironment(LoxEnvironment? enclosing)
+    private LoxEnvironment(ILoxEnvironment? enclosing)
     {
         _enclosing = enclosing;
-        _depth = (_enclosing?._depth ?? -1) + 1;
+        Depth = (_enclosing?.Depth ?? -1) + 1;
     }
 
-    private bool CanDefine(string name) => _depth <= 1 || (!_values.ContainsKey(name) && _enclosing!.CanDefine(name));
+    public ILoxEnvironment Push() => new LoxEnvironment(this);
 
-    public bool TryDefine(string name, object? value)
+    public bool TryDefine(ResolvedToken name, object? value)
     {
-        if (_values.ContainsKey(name) || !(_enclosing?.CanDefine(name) ?? true))
+        if (name.Depth != Depth || name.Index != _values.Count) { return false; }
+        _values.Add(value);
+        return true;
+    }
+    public void Define(ResolvedToken name, object? value)
+    {
+        if (!TryDefine(name, value))
         {
+            throw new DuplicateIdentifierException(name.Token);
+        }
+    }
+
+    public bool TryGet(ResolvedToken name, out object? value)
+    {
+        if (name.Depth > Depth)
+        {
+            value = false;
             return false;
         }
-        return _values.TryAdd(name, value);
-    }
-
-    public void Define(Token id, object? value)
-    {
-        if (!TryDefine(id.Lexeme!, value))
+        if (name.Depth == Depth)
         {
-            throw new DuplicateIdentifierException(id);
-        }
-    }
-    public bool TryGet(string id, out object? value)
-    {
-        if (_values.TryGetValue(id, out value))
-        {
+            if (name.Index >= _values.Count)
+            {
+                value = null;
+                return false;
+            }
+            value = _values[name.Index];
             return true;
         }
-        return _enclosing?.TryGet(id, out value) ?? false;
+        if (_enclosing is null)
+        {
+            value = null;
+            return false;
+        }
+        return _enclosing.TryGet(name, out value);
     }
 
-    public object? Get(Token id)
+    public object? Get(ResolvedToken name)
     {
-        if (!TryGet(id.Lexeme!, out var val))
+        if (!TryGet(name, out var val))
         {
-            throw new UndefinedIdentifierException(id);
+            throw new UndefinedIdentifierException(name.Token);
         }
         if (val == Uninitialized.Instance)
         {
-            throw new UninitializedIdentifierException(id);
+            throw new UninitializedIdentifierException(name.Token);
         }
         return val;
     }
-    public bool TrySet(string id, object? value)
+    public bool TrySet(ResolvedToken name, object? value)
     {
-        if (_values.ContainsKey(id))
+        if (name.Depth > Depth) { return false; }
+        if (name.Depth == Depth)
         {
-            _values[id] = value;
+            if (name.Index >= _values.Count) { return false; }
+            _values[name.Index] = value;
             return true;
         }
-        return _enclosing?.TrySet(id, value) ?? false;
+        return _enclosing?.TrySet(name, value) ?? false;
     }
-    public void Set(Token id, object? value)
+    public void Set(ResolvedToken name, object? value)
     {
-        if (!TrySet(id.Lexeme!, value))
+        if (!TrySet(name, value))
         {
-            throw new UndefinedIdentifierException(id);
+            throw new UndefinedIdentifierException(name.Token);
         }
     }
 }

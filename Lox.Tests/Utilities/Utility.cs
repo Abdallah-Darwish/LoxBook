@@ -5,6 +5,7 @@ using Lox.Utilities;
 using Lox.Visitors;
 using Lox.Visitors.Interpreters;
 using Lox.Visitors.Interpreters.Environments;
+using Lox.Visitors.Resolvers;
 
 namespace Lox.Tests.Utilities;
 
@@ -45,7 +46,10 @@ public static class Utility
     {
         var sync = new BufferOutputSync<object?>();
         using var parser = MakeParser(source);
-        ParserAdapter ad = new(parser, [new Interpreter(LoxEnvironment.GlobalEnvironment, sync)]);
+        Dictionary<Token, ResolvedToken> resolverStore = [];
+        Resolver resolver = new(LoxEnvironment.Globals.Select(g => g.Name.Text), resolverStore);
+        Interpreter interpreter = new(LoxEnvironment.GlobalEnvironment, sync, resolverStore);
+        ParserAdapter ad = new(parser, [resolver, interpreter]);
         ad.Visit();
         return sync.Buffer;
     }

@@ -4,28 +4,25 @@ using Lox.Parsers;
 using Lox.Scanners;
 using Lox.Visitors.Interpreters;
 using Lox.Visitors.Interpreters.Environments;
+using Lox.Core;
+using Lox.Visitors.Resolvers;
 
 string x = """"
-for(var i = 0; i < 5; i = i + 1)
+var fn = fun(name)
 {
-    var j = i;
-    while(true)
-    {
-        if(j <= 0)
-        {
-            break;
-        }
-        print j;
-        j = j - 1;
-    }
-}
+    return "Hello " + name;
+};
+print fn("Abdallah");
+print fn;
 """";
 Scanner sc = new(new StringReader(x));
 Parser p = new(sc);
 TextOutputSync sync = new(Console.Out);
-Interpreter interpreter = new(new LoxEnvironment(), sync);
+Dictionary<Token, ResolvedToken> resolverStore = [];
+Resolver resolver = new(LoxEnvironment.Globals.Select(g => g.Name.Text), resolverStore);
+Interpreter interpreter = new(LoxEnvironment.GlobalEnvironment, sync, resolverStore);
 TextWriterAstPrinter printer = new(Console.Out, new AstPrinter(new ExpressionHasStatement()));
-ParserAdapter ad = new(p, new IStatementVisitor[] { printer, interpreter });
+ParserAdapter ad = new(p, new IStatementVisitor[] { printer, resolver, interpreter });
 ad.Visit();
 
 

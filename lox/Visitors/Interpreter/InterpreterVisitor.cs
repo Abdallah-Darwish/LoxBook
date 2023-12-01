@@ -3,13 +3,14 @@ using Lox.Core;
 using Lox.Visitors.Interpreters.Callables;
 using Lox.Visitors.Interpreters.Environments;
 using Lox.Visitors.Interpreters.Exceptions;
+using Lox.Visitors.Resolvers;
 namespace Lox.Visitors.Interpreters;
 
-public class Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSync) : IExpressionVisitor<object?>, IStatementVisitor
+public class Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSync, IReadOnlyDictionary<Token, ResolvedToken> resolverStore) : IExpressionVisitor<object?>, IStatementVisitor
 {
     private readonly IOutputSync<object?> _outputSync = outputSync;
-    internal readonly ILoxEnvironment _globals = globals;
-    private ILoxEnvironment _environment = new LoxEnvironment(globals);
+    private readonly IReadOnlyDictionary<Token, ResolvedToken> _resolverStore = resolverStore;
+    private ILoxEnvironment _environment = globals?.Push() ?? new LoxEnvironment();
 
     private static bool IsTruthy(object? obj)
     {
@@ -135,20 +136,28 @@ public class Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSyn
 
     public void Visit(PrintStatement s) => _outputSync.Push(s.Expression.Accept(this));
 
-    public void Visit(VariableStatement s) => _environment.Define(s.Name, s.Initializer is null ? Uninitialized.Instance : s.Initializer.Accept(this));
+    public void Visit(VariableStatement s)
+    {
+        var resolvedName = _resolverStore[s.Name];
+        _environment.Define(resolvedName, Uninitialized.Instance);
+        if (s.Initializer is not null)
+        {
+            _environment.Set(resolvedName, s.Initializer.Accept(this));
+        }
+    }
 
-    public object? Visit(VariableExpression e) => _environment.Get(e.Name);
+    public object? Visit(VariableExpression e) => _environment.Get(_resolverStore[e.Name]);
 
     public object? Visit(AssignmentExpression e)
     {
         var val = e.Value.Accept(this);
-        _environment.Set(e.Name, val);
+        _environment.Set(_resolverStore[e.Name], val);
         return val;
     }
 
-    public void Visit(BlockStatement s) => ExecuteBlock(s.Statements, new LoxEnvironment(_environment as LoxEnvironment));
+    public void Visit(BlockStatement s) => ExecuteBlock(s.Statements, _environment.Push());
 
-    internal void ExecuteBlock(IEnumerable<Statement> statements, LoxEnvironment environment)
+    internal void ExecuteBlock(IEnumerable<Statement> statements, ILoxEnvironment environment)
     {
         var prevEnv = _environment;
         try
@@ -206,14 +215,13 @@ public class Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSyn
         return loxCallee.Call(this, args);
     }
 
-    public void Visit(FunctionStatement s) => _environment.Define(s.Name, new LoxFunction(s));
+    public void Visit(FunctionStatement s) => _environment.Define(_resolverStore[s.Name], new LoxFunction(s, s.Parameters.Select(p => _resolverStore[p]).ToArray(), _environment));
 
     public void Visit(ReturnStatement s) => throw new ReturnException(s.Value?.Accept(this), s);
 
     public object? Visit(LambdaExpression e)
     {
-        Token mangledName = new(e.Fun.Line, e.Fun.Column, TokenType.Identifier, $"$lambda{e.Fun.Line}_{e.Fun.Column}$");
-        Visit(new FunctionStatement(mangledName, e.Parameters, e.Body));
-        return _environment.Get(mangledName);
+        new FunctionStatement(e.Fun, e.Parameters, e.Body).Accept(this);
+        return _environment.Get(_resolverStore[e.Fun]);
     }
 }

@@ -212,7 +212,7 @@ public class Parser : IParser
         }
         else
         {
-            cond = new LiteralExpression(new Token(-1, -1, TokenType.True, null));
+            cond = new LiteralExpression(Token.FromBool(true));
             _scanner.GetAndMoveNext(TokenType.Semicolon, "for statement condition or an expression");
         }
 
