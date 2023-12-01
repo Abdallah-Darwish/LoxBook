@@ -178,4 +178,29 @@ print fn;
 
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void TestVisitFunction_FunctionParametersHaveSimilarNameToOuterScopeVars_WillShadowOuterScope()
+    {
+        string source = """
+fun fn1(a, b)
+{
+    fun fn2(a, b)
+    {
+        fun fn3(a, b)
+        {
+            return a + 3 + b + 3;
+        }
+        return fn3(a + 2, b + 2);
+    }
+    return fn2(a + 1, b + 1);
+}
+print fn1(1, 2);
+""";
+
+        var result = Utility.Interpret<double>(source);
+        double[] expected = [15];
+
+        Assert.Equal(expected, result);
+    }
 }

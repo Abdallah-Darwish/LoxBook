@@ -102,6 +102,7 @@ public class Parser : IParser
                 isFirstParam = false;
             }
             parameters.Add(_scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration"));
+            isFirstParam = false;
         }
         _scanner.GetAndMoveNext(TokenType.RightParentheses, $"{type} parameter list");
 
