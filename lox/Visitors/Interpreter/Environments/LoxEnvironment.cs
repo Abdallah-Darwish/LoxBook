@@ -17,7 +17,7 @@ public class LoxEnvironment : ILoxEnvironment
         return global;
     }
     private static readonly Lazy<LoxEnvironment> s_globalEnvironment = new(BuildGlobalEnvironment, LazyThreadSafetyMode.ExecutionAndPublication);
-    public static LoxEnvironment GlobalEnvironment => s_globalEnvironment.Value;
+    public static ILoxEnvironment GlobalEnvironment => s_globalEnvironment.Value;
     private readonly ILoxEnvironment? _enclosing;
     private readonly List<object?> _values = [];
 

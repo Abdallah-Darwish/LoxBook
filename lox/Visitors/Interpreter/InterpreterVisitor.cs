@@ -6,7 +6,7 @@ using Lox.Visitors.Interpreters.Exceptions;
 using Lox.Visitors.Resolvers;
 namespace Lox.Visitors.Interpreters;
 
-public class Interpreter(LoxEnvironment? globals, IOutputSync<object?> outputSync, IReadOnlyDictionary<Token, ResolvedToken> resolverStore) : IExpressionVisitor<object?>, IStatementVisitor
+public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSync, IReadOnlyDictionary<Token, ResolvedToken> resolverStore) : IExpressionVisitor<object?>, IStatementVisitor
 {
     private readonly IOutputSync<object?> _outputSync = outputSync;
     private readonly IReadOnlyDictionary<Token, ResolvedToken> _resolverStore = resolverStore;
