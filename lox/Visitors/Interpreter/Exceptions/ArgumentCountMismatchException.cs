@@ -1,4 +1,3 @@
-using Lox.Core;
 using Lox.Visitors.Interpreters.Callables;
 
 namespace Lox.Visitors.Interpreters.Exceptions;

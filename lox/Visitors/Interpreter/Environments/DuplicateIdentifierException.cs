@@ -3,8 +3,7 @@ using Lox.Visitors.Interpreters.Exceptions;
 
 namespace Lox.Visitors.Interpreters.Environments;
 
-public class DuplicateIdentifierException : RuntimeException
+public class DuplicateIdentifierException(Token id) : RuntimeException($"Duplicate identifier definition: {id.Lexeme}")
 {
-    public Token Id { get; }
-    public DuplicateIdentifierException(Token id) : base($"Duplicate identifier definition: {id.Lexeme}") => Id = id;
+    public Token Id { get; } = id;
 }

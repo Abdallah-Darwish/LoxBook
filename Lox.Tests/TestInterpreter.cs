@@ -1,6 +1,7 @@
 ﻿using Lox.Tests.Utilities;
 using Lox.Visitors.Interpreters.Environments;
 using Lox.Visitors.Interpreters.Exceptions;
+using Lox.Visitors.Resolvers.Exceptions;
 
 namespace Lox.Tests;
 
@@ -29,8 +30,10 @@ print x;
         string source = """
 {
     var x = 1;
+    print x;
     {
         var x = 2;
+        print x;
     }
 }
 """;
@@ -132,6 +135,7 @@ fun Greet(name)
     {
         return "Hello " + userName;
     }
+    userName = userName + "hehe";
     print "Greeting " + name;
     return BuildMessage(name);
 }
@@ -202,5 +206,20 @@ print fn1(1, 2);
         double[] expected = [15];
 
         Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestVisitBlock_UnusedVariable_ShouldThrowException()
+    {
+        string source = """
+{
+    var x = 1;
+    var y = 2;
+    print x;
+}
+""";
+
+        var ex = Assert.Throws<UnusedVariableException>(() => Utility.Interpret(source));
+        Assert.Equal("y", ex.SourceToken.Text);
     }
 }

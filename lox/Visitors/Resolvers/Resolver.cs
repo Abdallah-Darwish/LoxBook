@@ -7,9 +7,10 @@ namespace Lox.Visitors.Resolvers;
 public record class ResolvedToken(Token Token, int Index, int Depth);
 public class Resolver : IStatementVisitor, IExpressionVisitor
 {
-    private record class ScopeVariable(int Index, int Depth)
+    private record class ScopeVariable(Token Token, int Index, int Depth)
     {
         public bool IsDefined { get; set; } = false;
+        public bool IsUsed { get; set; } = false;
     }
 
     public Resolver(IEnumerable<string> globals, IDictionary<Token, ResolvedToken> store)
@@ -41,7 +42,11 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         var lastScope = _scopes.Pop();
         foreach (var scopeVar in lastScope)
         {
-            _cactusStack[scopeVar].Pop();
+            var cactusVar = _cactusStack[scopeVar].Pop();
+            if (!cactusVar.IsUsed)
+            {
+                throw new UnusedVariableException(cactusVar.Token);
+            }
         }
     }
     private int Depth => _scopes.Count - 1;
@@ -58,41 +63,49 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         }
 
         var lastScope = _scopes.Peek();
-        varStack.Push(new(lastScope.Count, Depth));
+        varStack.Push(new(name, lastScope.Count, Depth));
         lastScope.Add(name.Text);
     }
 
 
-    private void Define(Token token)
+    private void Define(Token name)
     {
-        _cactusStack[token.Text].Peek().IsDefined = true;
-        Resolve(token);
+        _cactusStack[name.Text].Peek().IsDefined = true;
+        Resolve(name, false);
     }
 
-    private void Resolve(Token token)
+    private ScopeVariable GetVariable(Token name)
     {
-        _cactusStack.TryGetValue(token.Text, out var varScope);
+        _cactusStack.TryGetValue(name.Text, out var varScope);
         if (varScope is null)
         {
-            throw new UndefinedIdentifierException(token);
+            throw new UndefinedIdentifierException(name);
         }
 
         varScope.TryPeek(out var localVar);
-        if (localVar is null)
-        {
-            throw new UndefinedIdentifierException(token);
-        }
+        return localVar ?? throw new UndefinedIdentifierException(name);
+    }
+
+    private void UnuseVariable(Token name) => GetVariable(name).IsUsed = false;
+
+    private void Resolve(Token name, bool markUsed)
+    {
+        var localVar = GetVariable(name);
         if (!localVar.IsDefined)
         {
-            throw new ResolverException("You can't use a variable in its own initializer.", token);
+            throw new ResolverException("You can't use a variable in its own initializer.", name);
+        }
+        if (markUsed)
+        {
+            localVar.IsUsed = true;
         }
 
-        _store.Add(token, new(token, localVar.Index, localVar.Depth));
+        _store.Add(name, new(name, localVar.Index, localVar.Depth));
     }
     /// <remarks>
     /// We can't go through <see cref="Declare"/> -> <see cref="Define"/> -> <see cref="Resolve"/> because it will check for duplicates.
     /// </remarks>
-    private void DirectResolve(Token token) => _store.Add(token, new(token, _scopes.Peek().Count, Depth));
+    private void DirectResolve(Token name) => _store.Add(name, new(name, _scopes.Peek().Count, Depth));
 
     public void Visit(ExpressionStatement s) => s.Expression.Accept(this);
 
@@ -101,7 +114,11 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     public void Visit(VariableStatement s)
     {
         Declare(s.Name);
-        s.Initializer?.Accept(this);
+        if (s.Initializer is not null)
+        {
+            s.Initializer.Accept(this);
+            UnuseVariable(s.Name);
+        }
         Define(s.Name);
     }
 
@@ -180,11 +197,11 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
 
     public void Visit(UnaryExpression e) => e.Right.Accept(this);
 
-    public void Visit(VariableExpression e) => Resolve(e.Name);
+    public void Visit(VariableExpression e) => Resolve(e.Name, true);
 
     public void Visit(AssignmentExpression e)
     {
-        Resolve(e.Name);
+        Resolve(e.Name, true);
         e.Value.Accept(this);
     }
 

@@ -8,12 +8,14 @@ using Lox.Core;
 using Lox.Visitors.Resolvers;
 
 string x = """"
-var fn = fun(name)
 {
-    return "Hello " + name;
-};
-print fn("Abdallah");
-print fn;
+    var x = 1;
+    {
+        var x = 2;
+        print x;
+    }
+    print x;
+}
 """";
 Scanner sc = new(new StringReader(x));
 Parser p = new(sc);
