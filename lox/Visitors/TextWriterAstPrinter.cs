@@ -25,4 +25,6 @@ public class TextWriterAstPrinter(TextWriter output, IStatementVisitor<string> a
     public void Visit(FunctionStatement s) => Print(s);
 
     public void Visit(ReturnStatement s) => Print(s);
+
+    public void Visit(ClassStatement s) => Print(s);
 }

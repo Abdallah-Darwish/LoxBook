@@ -82,7 +82,7 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.LeftBrace, "class name");
 
         List<FunctionStatement> methods = [];
-        while (_scanner.Current != TokenType.RightParentheses)
+        while (_scanner.Current.Type != TokenType.RightParentheses)
         {
             methods.Add(ParseFunction(FunctionType.Method));
         }

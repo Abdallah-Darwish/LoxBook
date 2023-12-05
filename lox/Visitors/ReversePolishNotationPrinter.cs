@@ -20,4 +20,6 @@ public class ReversePolishNotationPrinter : IExpressionVisitor<string>
     public string Visit(CallExpression e) => string.Join(' ', e.Arguments.Select(a => a.Accept(this)).Append(e.Callee.Accept(this)));
 
     public string Visit(LambdaExpression e) => throw new NotImplementedException();
+
+    public string Visit(GetExpression e) => throw new NotImplementedException();
 }

@@ -5,7 +5,7 @@ namespace Lox.Visitors.Interpreters.Callables;
 
 public class LoxInstance(LoxClass klass)
 {
-    private readonly LoxClass Klass { get; } = klass;
+    public LoxClass Klass { get; } = klass;
 
     private readonly Dictionary<string, object?> _fields = [];
 

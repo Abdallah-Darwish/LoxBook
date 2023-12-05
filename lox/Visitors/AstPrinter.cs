@@ -121,4 +121,8 @@ public class AstPrinter(IExpressionVisitor<bool> expressionHasStatementVisitor) 
     public string Visit(FunctionStatement s) => Parenthesize(false, ["fun", s.Name, "(", .. s.Parameters, ")", .. s.Body]);
 
     public string Visit(ReturnStatement s) => Parenthesize(false, s.Return, s.Value);
+
+    public string Visit(GetExpression e) => Parenthesize(true, e.Instance, e.Name);
+
+    public string Visit(ClassStatement s) => Parenthesize(false, ["class", s.Name, .. s.Methods]);
 }
