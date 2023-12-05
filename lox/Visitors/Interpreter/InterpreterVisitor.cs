@@ -224,4 +224,21 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
         new FunctionStatement(e.Fun, e.Parameters, e.Body).Accept(this);
         return _environment.Get(_resolverStore[e.Fun]);
     }
+
+    public object? Visit(GetExpression e)
+    {
+        var lhs = e.Instance.Accept(this);
+        if (lhs is not LoxInstance instance)
+        {
+            throw new ObjectExpectedException(lhs, e.Instance);
+        }
+
+        return instance.Get(e.Name.Text, e);
+    }
+
+    public void Visit(ClassStatement s)
+    {
+        LoxClass klass = new(s.Name, s.Methods);
+        _environment.Define(klass.Name, klass);
+    }
 }

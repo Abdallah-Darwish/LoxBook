@@ -236,4 +236,17 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
             EndScope();
         }
     }
+
+    public void Visit(ClassStatement s)
+    {
+        Declare(s.Name);
+        Define(s.Name);
+
+        foreach (var meth in s.Methods)
+        {
+            meth.Accept(this);
+        }
+    }
+
+    public void Visit(GetExpression e) => e.Instance.Accept(this);
 }

@@ -71,8 +71,24 @@ public class Parser : IParser
         {
             TokenType.Var => ParseVariableDeclaration(),
             TokenType.Fun => ParseFunctionDeclaration(),
+            TokenType.Class => ParseClassDeclaration(),
             _ => ParseStatement()
         };
+    }
+    private ClassStatement ParseClassDeclaration()
+    {
+        _scanner.GetAndMoveNext(TokenType.Class);
+        var name = _scanner.GetAndMoveNext(TokenType.Identifier);
+        _scanner.GetAndMoveNext(TokenType.LeftBrace, "class name");
+
+        List<FunctionStatement> methods = [];
+        while (_scanner.Current != TokenType.RightParentheses)
+        {
+            methods.Add(ParseFunction(FunctionType.Method));
+        }
+        _scanner.GetAndMoveNext(TokenType.RightBrace);
+
+        return new(name, methods);
     }
     private VariableStatement ParseVariableDeclaration()
     {
@@ -395,25 +411,34 @@ public class Parser : IParser
     }
     private Expression ParseCall()
     {
-        var callee = ParseLambda();
+        var lhs = ParseLambda();
         while (true)
         {
             // Its done this way to handle syntaxes like Func(1, 2)(3, 4)(5, 6)
             if (_scanner.Current.Type == TokenType.LeftParentheses)
             {
-                if (callee is LiteralExpression literal)
+                if (lhs is LiteralExpression literal)
                 {
-                    throw new ParserException("Literals are not callable", literal.Value);
+                    throw new ParserException("Literals are not callable.", literal.Value);
                 }
                 var (rightParentheses, arguemnts) = ParseArguments();
-                callee = new CallExpression(callee, rightParentheses, arguemnts);
+                lhs = new CallExpression(lhs, rightParentheses, arguemnts);
+            }
+            else if (_scanner.Current.Type == TokenType.Dot)
+            {
+                if (lhs is LiteralExpression literal)
+                {
+                    throw new ParserException("Literals can't appear before '.'.", literal.Value);
+                }
+                var name = _scanner.GetAndMoveNext(TokenType.Identifier, "access operator '.'");
+                lhs = new GetExpression(lhs, name);
             }
             else
             {
                 break;
             }
         }
-        return callee;
+        return lhs;
     }
     private (Token RightParentheses, Expression[] Arguemnts) ParseArguments()
     {
