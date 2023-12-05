@@ -249,4 +249,10 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     }
 
     public void Visit(GetExpression e) => e.Instance.Accept(this);
+
+    public void Visit(SetExpression e)
+    {
+        e.Instance.Accept(this);
+        e.Value.Accept(this);
+    }
 }

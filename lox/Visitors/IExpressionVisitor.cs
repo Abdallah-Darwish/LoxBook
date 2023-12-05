@@ -12,8 +12,9 @@ public interface IExpressionVisitor
     void Visit(VariableExpression e);
     void Visit(AssignmentExpression e);
     void Visit(CallExpression e);
-    void Visit(GetExpression e);
     void Visit(LambdaExpression e);
+    void Visit(GetExpression e);
+    void Visit(SetExpression e);
 }
 public interface IExpressionVisitor<T>
 {
@@ -25,6 +26,7 @@ public interface IExpressionVisitor<T>
     T Visit(VariableExpression e);
     T Visit(AssignmentExpression e);
     T Visit(CallExpression e);
-    T Visit(GetExpression e);
     T Visit(LambdaExpression e);
+    T Visit(GetExpression e);
+    T Visit(SetExpression e);
 }

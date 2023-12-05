@@ -56,13 +56,19 @@ public record class CallExpression(Expression Callee, Token RightParentheses, Ex
     public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
 
+public record class LambdaExpression(Token Fun, IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body) : Expression
+{
+    public override void Accept(IExpressionVisitor visitor) => visitor.Visit(this);
+    public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
+}
+
 public record class GetExpression(Expression Instance, Token Name) : Expression
 {
     public override void Accept(IExpressionVisitor visitor) => visitor.Visit(this);
     public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
 
-public record class LambdaExpression(Token Fun, IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body) : Expression
+public record class SetExpression(Expression Instance, Token Name, Expression Value) : Expression
 {
     public override void Accept(IExpressionVisitor visitor) => visitor.Visit(this);
     public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);

@@ -135,8 +135,9 @@ Unary       : Token Operator, $base$ Right
 Variable    : Token Name
 Assignment  : Token Name, $base$ Value
 Call        : $base$ Callee, Token RightParentheses, $base$[] Arguments
-Get         : $base$ Instance, Token Name
 Lambda      : Token Fun, IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body
+Get         : $base$ Instance, Token Name
+Set         : $base$ Instance, Token Name, $base$ Value
 """
 expressions = Ast('Core', 'Expression', expressions_ast_txt, VisitorVariant.ALL)
 

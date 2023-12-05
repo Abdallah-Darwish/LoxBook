@@ -2,9 +2,16 @@ using Lox.Core;
 
 namespace Lox.Visitors.Interpreters.Callables;
 
-public class LoxClass(ClassStatement declaration) : ILoxCallable
+public class LoxClass : ILoxCallable
 {
-    private readonly ClassStatement _declaration = declaration;
+    public LoxClass(ClassStatement declaration)
+    {
+        _declaration = declaration;
+        _methods = declaration.Methods.ToDictionary(m => m.Name.Text);
+
+    }
+    private readonly ClassStatement _declaration;
+    private readonly IReadOnlyDictionary<string, FunctionStatement> _methods;
 
     public string Name => _declaration.Name.Text;
 
@@ -13,4 +20,6 @@ public class LoxClass(ClassStatement declaration) : ILoxCallable
     public object? Call(Interpreter interpreter, object?[] arguments) => new LoxInstance(this);
 
     public override string ToString() => Name;
+
+    public FunctionStatement? FindMethod(string name) => _methods.GetValueOrDefault(name);
 }
