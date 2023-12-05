@@ -303,14 +303,14 @@ public class Parser : IParser
         {
             return name;
         }
-        if (name is not VariableExpression varExpr or GetExpression getExpr)
+        if (name is not VariableExpression or GetExpression)
         {
             throw new ParserException($"Expected a expression of type {nameof(VariableExpression)} or {nameof(GetExpression)} instead found {name.GetType().Name}", _scanner.Current);
         }
         _scanner.GetAndMoveNext();
 
         var val = ParseAssignment();
-        return varExpr is null ? new SetExpression(getExpr.Instance, getExpr.Name, val) : new AssignmentExpression(varExpr.Name, val);
+        return name is GetExpression getExpr ? new SetExpression(getExpr.Instance, getExpr.Name, val) : new AssignmentExpression((name as VariableExpression)!.Name, val);
     }
 
     private Expression ParseTernary()

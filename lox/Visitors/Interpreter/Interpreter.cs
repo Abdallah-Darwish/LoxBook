@@ -250,6 +250,8 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
             throw new ObjectExpectedException(lhs, e.Instance);
         }
 
-        return instance.Set(e.Name.Text, e.Value.Accept(this));
+        var val = e.Value.Accept(this);
+        instance.Set(e.Name.Text, val);
+        return val;
     }
 }
