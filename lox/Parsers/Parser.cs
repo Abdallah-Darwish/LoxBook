@@ -82,7 +82,7 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.LeftBrace, "class name");
 
         List<FunctionStatement> methods = [];
-        while (_scanner.Current.Type != TokenType.RightParentheses)
+        while (_scanner.Current.Type != TokenType.RightBrace)
         {
             methods.Add(ParseFunction(FunctionType.Method));
         }
@@ -430,6 +430,7 @@ public class Parser : IParser
                 {
                     throw new ParserException("Literals can't appear before '.'.", literal.Value);
                 }
+                _scanner.GetAndMoveNext();
                 var name = _scanner.GetAndMoveNext(TokenType.Identifier, "access operator '.'");
                 lhs = new GetExpression(lhs, name);
             }

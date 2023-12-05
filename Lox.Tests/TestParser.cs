@@ -310,4 +310,50 @@ while(1 < 10)
         var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
         Assert.Contains("No enclosing loop out of which to break", ex.Message);
     }
+
+    [Fact]
+    public void TestParseClassDeclaration_NormalClass_ParsedSuccessfuly()
+    {
+        string source = """
+class Cls
+{
+    Classing()
+    {
+        print "Classing from Dubai metro";
+    }
+
+    Speak(lang)
+    {
+        print lang + " has no class!";
+    }
+}
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ class Cls
+    { fun Classing ( )
+        { print "Classing from Dubai metro" }
+    }
+    { fun Speak ( lang )
+        { print [ lang + " has no class!" ] }
+    }
+}
+""";
+
+        Assert.Equal(expected, stmt);
+    }
+
+    [Fact]
+    public void TestParseCall_GetExpressionWithCall_ShouldBeParsedAsNestedExpressions()
+    {
+        string source = """
+what.you.know(about, rolling.down.in(the).deep);
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ [ [ [ what . you ] . know ] ( about , [ [ [ [ rolling . down ] . in ] ( the ) ] . deep ] ) ] }
+""";
+
+        Assert.Equal(expected, stmt);
+    }
 }
