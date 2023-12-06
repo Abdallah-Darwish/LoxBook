@@ -1,4 +1,5 @@
 using Lox.Core;
+using Lox.Visitors.Interpreters.Callables;
 using Lox.Visitors.Interpreters.Environments;
 using Lox.Visitors.Resolvers.Exceptions;
 
@@ -11,6 +12,12 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     {
         public bool IsDefined { get; set; } = false;
         public bool IsUsed { get; set; } = false;
+    }
+    public static ILoxEnvironment BindThis(ILoxEnvironment environment, LoxInstance instance)
+    {
+        var closure = environment.Push();
+        closure.Define(new(Token.This, 0, closure.Depth), instance);
+        return closure;
     }
 
     public Resolver(IEnumerable<string> globals, IDictionary<Token, ResolvedToken> store)
@@ -32,7 +39,7 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     private readonly Stack<List<string>> _scopes = [];
     private readonly Dictionary<string, Stack<ScopeVariable>> _cactusStack = [];
     private void BeginScope() => _scopes.Push([]);
-    private void EndScope()
+    private void EndScope(bool checkVariableUsage)
     {
         if (_scopes.Count == 1)
         {
@@ -43,7 +50,7 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         foreach (var scopeVar in lastScope)
         {
             var cactusVar = _cactusStack[scopeVar].Pop();
-            if (!cactusVar.IsUsed)
+            if (checkVariableUsage && !cactusVar.IsUsed)
             {
                 throw new UnusedVariableException(cactusVar.Token);
             }
@@ -125,6 +132,8 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     public void Visit(BlockStatement s)
     {
         BeginScope();
+
+        bool threwException = false;
         try
         {
             foreach (var stmt in s.Statements)
@@ -132,10 +141,12 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
                 stmt.Accept(this);
             }
         }
-        finally
+        catch
         {
-            EndScope();
+            threwException = true;
+            throw;
         }
+        finally { EndScope(!threwException); }
     }
 
     public void Visit(IfStatement s)
@@ -158,6 +169,8 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         Declare(s.Name);
         Define(s.Name);
         BeginScope();
+
+        bool threwException = false;
         try
         {
             foreach (var param in s.Parameters)
@@ -170,10 +183,12 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
                 stmt.Accept(this);
             }
         }
-        finally
+        catch
         {
-            EndScope();
+            threwException = true;
+            throw;
         }
+        finally { EndScope(!threwException); }
     }
 
     public void Visit(ReturnStatement s) => s.Value?.Accept(this);
@@ -219,6 +234,8 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         DirectResolve(e.Fun);
 
         BeginScope();
+
+        var threwException = false;
         try
         {
             foreach (var param in e.Parameters)
@@ -231,10 +248,12 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
                 stmt.Accept(this);
             }
         }
-        finally
+        catch
         {
-            EndScope();
+            threwException = true;
+            throw;
         }
+        finally { EndScope(!threwException); }
     }
 
     public void Visit(ClassStatement s)
@@ -242,10 +261,16 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         Declare(s.Name);
         Define(s.Name);
 
-        foreach (var meth in s.Methods)
+        BeginScope();
+
+        try
         {
-            meth.Accept(this);
+            foreach (var meth in s.Methods)
+            {
+                meth.Accept(this);
+            }
         }
+        finally { EndScope(false); }
     }
 
     public void Visit(GetExpression e) => e.Instance.Accept(this);

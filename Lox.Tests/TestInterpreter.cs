@@ -222,4 +222,45 @@ print fn1(1, 2);
         var ex = Assert.Throws<UnusedVariableException>(() => Utility.Interpret(source));
         Assert.Equal("y", ex.SourceToken.Text);
     }
+
+    [Fact]
+    public void TestVisitClass_ClassDefinition_ShouldParseClass()
+    {
+        string source = """
+class MetroBoomin
+{
+    hello()
+    {
+        print "hello there";
+    }
+}
+print MetroBoomin;
+""";
+
+        var result = Utility.InterpretToString(source);
+        string[] expected = ["MetroBoomin"];
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestVisitClass_InstantiateClass_WouldReturnInstance()
+    {
+        string source = """
+class Arctic
+{
+    sing()
+    {
+        print "I am goint back to 505";
+    }
+}
+var instance = Arctic();
+print instance;
+""";
+
+        var result = Utility.InterpretToString(source);
+        string[] expected = ["Arctic instance"];
+
+        Assert.Equal(expected, result);
+    }
 }

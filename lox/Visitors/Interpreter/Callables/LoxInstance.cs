@@ -17,7 +17,9 @@ public class LoxInstance(LoxClass klass)
         {
             return val;
         }
-        return Klass.FindMethod(name) ?? throw new UndefinedPropertyException(this, name, source);
+        var method = ;
+        if (method is not )
+            return Klass.FindMethod(name)?. ?? throw new UndefinedPropertyException(this, name, source);
     }
 
     public void Set(string name, object? value) => _fields[name] = value;

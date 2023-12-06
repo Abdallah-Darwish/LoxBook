@@ -7,7 +7,7 @@ public class LoxClass : ILoxCallable
     public LoxClass(ClassStatement declaration)
     {
         _declaration = declaration;
-        _methods = declaration.Methods.ToDictionary(m => m.Name.Text);
+        _methods = declaration.Methods.ToDictionary(m => m.Name.Text, m => new LoxFunction(m, ));
 
     }
     private readonly ClassStatement _declaration;
