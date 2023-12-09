@@ -1,6 +1,7 @@
 using Lox.Core;
 using Lox.Scanners;
 
+
 namespace Lox.Parsers;
 public enum FunctionType
 {
@@ -15,6 +16,12 @@ public class Parser : IParser
     private bool IsInLoopRule => _loopDepth > 0;
     private int _functionDepth = 0;
     private bool IsInFunctionBody => _functionDepth > 0;
+
+    private int _classDepth = 0;
+    private bool IsInClassBody => _classDepth > 0;
+    /// <remarks>
+    /// Doesn't store class state.
+    /// </summary>
     private readonly Stack<(int LoopDepth, int FunctionDepth)> _state = [];
     private void PushState()
     {
@@ -81,14 +88,23 @@ public class Parser : IParser
         var name = _scanner.GetAndMoveNext(TokenType.Identifier);
         _scanner.GetAndMoveNext(TokenType.LeftBrace, "class name");
 
-        List<FunctionStatement> methods = [];
-        while (_scanner.Current.Type != TokenType.RightBrace)
+        _classDepth++;
+        try
         {
-            methods.Add(ParseFunction(FunctionType.Method));
+            List<FunctionStatement> methods = [];
+            while (_scanner.Current.Type != TokenType.RightBrace)
+            {
+                methods.Add(ParseFunction(FunctionType.Method));
+            }
+            _scanner.GetAndMoveNext(TokenType.RightBrace);
+            return new(name, methods);
         }
-        _scanner.GetAndMoveNext(TokenType.RightBrace);
+        finally
+        {
+            _classDepth--;
+        }
 
-        return new(name, methods);
+
     }
     private VariableStatement ParseVariableDeclaration()
     {
@@ -479,6 +495,10 @@ public class Parser : IParser
     {
         if (_scanner.Current.Type == TokenType.This)
         {
+            if (!IsInClassBody)
+            {
+                throw new ParserException("Can't use 'this' outside class.", _scanner.Current);
+            }
             return new ThisExpression(_scanner.GetAndMoveNext());
         }
         if (_scanner.Current.Type is TokenType.Number or TokenType.String or TokenType.True or TokenType.False

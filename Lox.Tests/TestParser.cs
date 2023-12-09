@@ -356,4 +356,41 @@ what.you.know(about, rolling.down.in(the).deep);
 
         Assert.Equal(expected, stmt);
     }
+
+    [Fact]
+    public void TestParseThis_OutsideClass_ThrowsException()
+    {
+        string source = """
+print this;
+""";
+        var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
+        Assert.Contains("Can't use 'this' outside class", ex.Message);
+        Assert.Equal("this", ex.Token!.Text);
+    }
+
+    [Fact]
+    public void TestParseThis_InsideClass_ParsedFine()
+    {
+        string source = """
+class PublicTransport
+{
+    WasteTime(time)
+    {
+        this._wastedTime = time + 100;
+        return "Wasted " + this._wastedTime + " of this man's life";
+    }
+}
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ class PublicTransport
+    { fun WasteTime ( time )
+        { [ this . _wastedTime = [ time + 100 ] ] }
+        { return [ [ "Wasted " + [ this . _wastedTime ] ] + " of this man's life" ] }
+    }
+}
+""";
+
+        Assert.Equal(expected, stmt);
+    }
 }
