@@ -303,7 +303,7 @@ public class Parser : IParser
         {
             return name;
         }
-        if (name is not VariableExpression or GetExpression)
+        if (name is not VariableExpression and not GetExpression)
         {
             throw new ParserException($"Expected a expression of type {nameof(VariableExpression)} or {nameof(GetExpression)} instead found {name.GetType().Name}", _scanner.Current);
         }
@@ -477,6 +477,10 @@ public class Parser : IParser
     }
     private Expression ParsePrimary()
     {
+        if (_scanner.Current.Type == TokenType.This)
+        {
+            return new ThisExpression(_scanner.GetAndMoveNext());
+        }
         if (_scanner.Current.Type is TokenType.Number or TokenType.String or TokenType.True or TokenType.False
             or TokenType.Nil)
         {

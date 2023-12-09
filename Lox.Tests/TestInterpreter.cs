@@ -229,7 +229,7 @@ print fn1(1, 2);
         string source = """
 class MetroBoomin
 {
-    hello()
+    Hello()
     {
         print "hello there";
     }
@@ -249,7 +249,7 @@ print MetroBoomin;
         string source = """
 class Arctic
 {
-    sing()
+    Sing()
     {
         print "I am goint back to 505";
     }
@@ -268,19 +268,29 @@ print instance;
     public void TestVisitCall_CallMethod_WouldCallMethodAndBindThis()
     {
         string source = """
-class Arctic
+class Counter
 {
-    sing()
+
+    SetValue(val)
     {
-        print "I am goint back to 505";
+        this._value = val;
+    }
+
+    Increment(addition)
+    {
+        this._value = this._value + addition;
+        return this._value;
     }
 }
-var instance = Arctic();
-instance.sing();
+var cnt = Counter();
+cnt.SetValue(0);
+print cnt.Increment(1);
+print cnt.Increment(2);
+print cnt.Increment(3);
 """;
 
-        var result = Utility.InterpretToString(source);
-        string[] expected = ["Arctic instance"];
+        var result = Utility.Interpret<double>(source);
+        double[] expected = [1, 3, 6];
 
         Assert.Equal(expected, result);
     }

@@ -75,10 +75,10 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     }
 
 
-    private void Define(Token name)
+    private void Define(Token name, bool markUsed = false)
     {
         _cactusStack[name.Text].Peek().IsDefined = true;
-        Resolve(name, false);
+        Resolve(name, markUsed);
     }
 
     private ScopeVariable GetVariable(Token name)
@@ -185,8 +185,9 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
             }
             if (isInClass)
             {
-                Declare(Token.This, true);
-                Define(Token.This);
+                var thisToken = Token.This with { Line = s.Name.Line, Column = s.Name.Column };
+                Declare(thisToken, true);
+                Define(thisToken, true);
             }
             foreach (var stmt in s.Body)
             {
@@ -271,7 +272,7 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         Declare(s.Name);
         Define(s.Name);
 
-        BeginScope();
+        BeginScope(true);
 
         try
         {

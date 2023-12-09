@@ -26,7 +26,7 @@ public class LoxFunction(FunctionStatement declaration, IReadOnlyList<ResolvedTo
         }
         if (_instance is not null)
         {
-            env.Define(new ResolvedToken(Token.This, env.Depth, env.Count), _instance);
+            env.Define(new ResolvedToken(Token.This, env.Count, env.Depth), _instance);
         }
 
         try

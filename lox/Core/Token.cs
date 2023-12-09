@@ -67,6 +67,7 @@ public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
         get
         {
             if (Type == TokenType.Identifier) { return Lexeme!; } // Hot path optimization
+            if (Type == TokenType.This) { return "this"; } // Hot path optimization
             if (TokenTextRepresentation.TryGetValue(Type, out var txt)) { return txt; }
             return Lexeme!;
         }

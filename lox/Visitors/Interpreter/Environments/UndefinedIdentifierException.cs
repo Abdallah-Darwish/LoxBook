@@ -6,5 +6,5 @@ namespace Lox.Visitors.Interpreters.Environments;
 public class UndefinedIdentifierException : RuntimeException
 {
     public Token Id { get; }
-    public UndefinedIdentifierException(Token id) : base($"Undefined identifier: {id.Lexeme}") => Id = id;
+    public UndefinedIdentifierException(Token id) : base($"Undefined identifier: {id.Text}") => Id = id;
 }

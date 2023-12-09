@@ -10,7 +10,8 @@ public class LoxClass : ILoxCallable
     public LoxClass(ClassStatement declaration, IReadOnlyDictionary<Token, ResolvedToken> resolverStore, ILoxEnvironment closure)
     {
         _declaration = declaration;
-        _methods = declaration.Methods.ToDictionary(m => m.Name.Text, m => new LoxFunction(m, m.Parameters.Select(p => resolverStore[p]).ToArray(), closure));
+        var methodsClosure = closure.Push(); // We do this because the class will open a scope for it self
+        _methods = declaration.Methods.ToDictionary(m => m.Name.Text, m => new LoxFunction(m, m.Parameters.Select(p => resolverStore[p]).ToArray(), methodsClosure));
     }
     private readonly ClassStatement _declaration;
     private readonly IReadOnlyDictionary<string, LoxFunction> _methods;
