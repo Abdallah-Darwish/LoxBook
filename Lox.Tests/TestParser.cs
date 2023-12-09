@@ -393,4 +393,40 @@ class PublicTransport
 
         Assert.Equal(expected, stmt);
     }
+
+    [Fact]
+    public void TestParseFunction_ReturnFromFunctionNamedInit_Allowed()
+    {
+        string source = """
+fun init()
+{
+    return 1;
+}
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ fun init ( )
+    { return 1 }
+}
+""";
+
+        Assert.Equal(expected, stmt);
+    }
+
+    [Fact]
+    public void TestParseFunction_ReturnFromConstructor_ThrowsException()
+    {
+        string source = """
+class Cls
+{
+    init()
+    {
+        return 1;
+    }
+}
+""";
+        var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
+        Assert.Contains("Can't return a value from an initializer.", ex.Message);
+        Assert.Equal("return", ex.Token!.Text);
+    }
 }

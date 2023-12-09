@@ -294,4 +294,48 @@ print cnt.Increment(3);
 
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void TestVisitFunction_InvokeCtorDirectly_WouldReturnTheInstance()
+    {
+        string source = """
+class Cls
+{
+    init(val)
+    {
+        this._val = val;
+    }
+}
+var cnt = Cls(1);
+var x = cnt.init(2);
+print x;
+print x._val;
+""";
+
+        var result = Utility.InterpretToString(source);
+        string[] expected = ["Cls instance", "2"];
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestVisitCall_CreateObjectWithExplicitCtor_ShouldCallCtorAfterCreatingObject()
+    {
+        string source = """
+class Cls
+{
+    init(val)
+    {
+        this._val = val;
+    }
+}
+var cnt = Cls(1);
+print cnt._val;
+""";
+
+        var result = Utility.Interpret<double>(source);
+        double[] expected = [1];
+
+        Assert.Equal(expected, result);
+    }
 }

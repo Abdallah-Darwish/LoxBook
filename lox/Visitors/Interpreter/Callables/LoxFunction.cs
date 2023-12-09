@@ -10,6 +10,7 @@ public class LoxFunction(FunctionStatement declaration, IReadOnlyList<ResolvedTo
     private LoxFunction(FunctionStatement declaration, IReadOnlyList<ResolvedToken> resolvedParameters, ILoxEnvironment closure, LoxInstance instance) : this(declaration, resolvedParameters, closure)
     {
         _instance = instance;
+        IsInitializer = _instance is not null && _declaration.Name.Text == "init";
     }
     private readonly FunctionStatement _declaration = declaration;
     private readonly IReadOnlyList<ResolvedToken> _resolvedArguments = resolvedParameters;
@@ -17,6 +18,7 @@ public class LoxFunction(FunctionStatement declaration, IReadOnlyList<ResolvedTo
     private readonly LoxInstance? _instance;
 
     public int Arity => _declaration.Parameters.Count;
+    public bool IsInitializer { get; }
     public object? Call(Interpreter interpreter, object?[] arguments)
     {
         var env = _closure.Push();
@@ -26,7 +28,7 @@ public class LoxFunction(FunctionStatement declaration, IReadOnlyList<ResolvedTo
         }
         if (_instance is not null)
         {
-            env.Define(new ResolvedToken(Token.This, env.Count, env.Depth), _instance);
+            env.Define(new(Token.This, env.Count, env.Depth), _instance);
         }
 
         try
@@ -35,9 +37,9 @@ public class LoxFunction(FunctionStatement declaration, IReadOnlyList<ResolvedTo
         }
         catch (ReturnException ex)
         {
-            return ex.Value;
+            return IsInitializer ? _instance : ex.Value;
         }
-        return null;
+        return IsInitializer ? _instance : null;
     }
 
     public LoxFunction Bind(LoxInstance instance) => new(_declaration, _resolvedArguments, _closure, instance);
