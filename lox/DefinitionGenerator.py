@@ -138,6 +138,7 @@ Call        : $base$ Callee, Token RightParentheses, $base$[] Arguments
 Lambda      : Token Fun, IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body
 Get         : $base$ Instance, Token Name
 Set         : $base$ Instance, Token Name, $base$ Value
+This        : Token This
 """
 expressions = Ast('Core', 'Expression', expressions_ast_txt, VisitorVariant.ALL)
 

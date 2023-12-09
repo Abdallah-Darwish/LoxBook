@@ -1,17 +1,19 @@
+using System.Collections.Immutable;
 using Lox.Core;
+using Lox.Visitors.Interpreters.Environments;
+using Lox.Visitors.Resolvers;
 
 namespace Lox.Visitors.Interpreters.Callables;
 
 public class LoxClass : ILoxCallable
 {
-    public LoxClass(ClassStatement declaration)
+    public LoxClass(ClassStatement declaration, IReadOnlyDictionary<Token, ResolvedToken> resolverStore, ILoxEnvironment closure)
     {
         _declaration = declaration;
-        _methods = declaration.Methods.ToDictionary(m => m.Name.Text, m => new LoxFunction(m, ));
-
+        _methods = declaration.Methods.ToDictionary(m => m.Name.Text, m => new LoxFunction(m, m.Parameters.Select(p => resolverStore[p]).ToArray(), closure));
     }
     private readonly ClassStatement _declaration;
-    private readonly IReadOnlyDictionary<string, FunctionStatement> _methods;
+    private readonly IReadOnlyDictionary<string, LoxFunction> _methods;
 
     public string Name => _declaration.Name.Text;
 
@@ -21,5 +23,5 @@ public class LoxClass : ILoxCallable
 
     public override string ToString() => Name;
 
-    public FunctionStatement? FindMethod(string name) => _methods.GetValueOrDefault(name);
+    public LoxFunction? FindMethod(string name) => _methods.GetValueOrDefault(name);
 }

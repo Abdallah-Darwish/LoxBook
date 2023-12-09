@@ -238,7 +238,7 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
 
     public void Visit(ClassStatement s)
     {
-        LoxClass klass = new(s);
+        LoxClass klass = new(s, _resolverStore, _environment);
         _environment.Define(_resolverStore[s.Name], klass);
     }
 
@@ -254,4 +254,6 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
         instance.Set(e.Name.Text, val);
         return val;
     }
+
+    public object? Visit(ThisExpression e) => _environment.Get(_resolverStore[e.This]);
 }

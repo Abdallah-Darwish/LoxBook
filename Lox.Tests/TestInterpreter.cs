@@ -263,4 +263,25 @@ print instance;
 
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void TestVisitCall_CallMethod_WouldCallMethodAndBindThis()
+    {
+        string source = """
+class Arctic
+{
+    sing()
+    {
+        print "I am goint back to 505";
+    }
+}
+var instance = Arctic();
+instance.sing();
+""";
+
+        var result = Utility.InterpretToString(source);
+        string[] expected = ["Arctic instance"];
+
+        Assert.Equal(expected, result);
+    }
 }

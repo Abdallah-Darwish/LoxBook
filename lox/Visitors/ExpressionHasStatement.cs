@@ -25,4 +25,6 @@ public class ExpressionHasStatement : IExpressionVisitor<bool>
     public bool Visit(GetExpression e) => e.Instance.Accept(this);
 
     public bool Visit(SetExpression e) => e.Instance.Accept(this) || e.Value.Accept(this);
+
+    public bool Visit(ThisExpression e) => false;
 }

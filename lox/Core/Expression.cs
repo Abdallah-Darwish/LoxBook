@@ -73,3 +73,9 @@ public record class SetExpression(Expression Instance, Token Name, Expression Va
     public override void Accept(IExpressionVisitor visitor) => visitor.Visit(this);
     public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
+
+public record class ThisExpression(Token This) : Expression
+{
+    public override void Accept(IExpressionVisitor visitor) => visitor.Visit(this);
+    public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
+}
