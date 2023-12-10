@@ -50,7 +50,7 @@ public record class BreakStatement() : Statement
     public override T Accept<T>(IStatementVisitor<T> visitor) => visitor.Visit(this);
 }
 
-public record class FunctionStatement(Token Name, IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body) : Statement
+public record class FunctionStatement(Token Name, IReadOnlyList<Token> Parameters, FunctionType Type, IReadOnlyList<Statement> Body) : Statement
 {
     public override void Accept(IStatementVisitor visitor) => visitor.Visit(this);
     public override T Accept<T>(IStatementVisitor<T> visitor) => visitor.Visit(this);

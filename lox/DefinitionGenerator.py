@@ -150,7 +150,7 @@ Block       : IReadOnlyList<$base$> Statements
 If          : Expression Condition, $base$ Then, $base$? Else
 While       : Expression Condition, $base$ Body
 Break       :
-Function    : Token Name, IReadOnlyList<Token> Parameters, IReadOnlyList<$base$> Body
+Function    : Token Name, IReadOnlyList<Token> Parameters, FunctionType Type, IReadOnlyList<$base$> Body
 Return      : Token Return, Expression? Value
 Class       : Token Name, IReadOnlyList<Function$base$> Methods
 """

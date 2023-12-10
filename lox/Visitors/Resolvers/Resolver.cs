@@ -166,13 +166,9 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
 
     public void Visit(FunctionStatement s)
     {
+        Declare(s.Name);
+        Define(s.Name);
         bool isInClass = IsInClass;
-        if (!isInClass) // We want to disallow calling the method recursivly without this.
-        {
-            Declare(s.Name);
-            Define(s.Name);
-        }
-
         BeginScope();
 
         bool threwException = false;

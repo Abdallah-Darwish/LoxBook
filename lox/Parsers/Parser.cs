@@ -3,12 +3,6 @@ using Lox.Scanners;
 
 
 namespace Lox.Parsers;
-public enum FunctionType
-{
-    Function,
-    Method,
-    Lambda
-}
 public class Parser : IParser
 {
     private IScanner _scanner;
@@ -87,7 +81,7 @@ public class Parser : IParser
         return _scanner.Current.Type switch
         {
             TokenType.Var => ParseVariableDeclaration(),
-            TokenType.Fun => ParseFunctionDeclaration(),
+            TokenType.Fun => ParseFunctionDeclaration(false),
             TokenType.Class => ParseClassDeclaration(),
             _ => ParseStatement()
         };
@@ -104,7 +98,7 @@ public class Parser : IParser
             List<FunctionStatement> methods = [];
             while (_scanner.Current.Type != TokenType.RightBrace)
             {
-                methods.Add(ParseFunction(FunctionType.Method));
+                methods.Add(ParseFunctionDeclaration(true));
             }
             _scanner.GetAndMoveNext(TokenType.RightBrace);
             return new(name, methods);
@@ -132,21 +126,25 @@ public class Parser : IParser
     }
     private (IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body) ParseLambdaParametersAndBody(FunctionType type, Token? name)
     {
-        _scanner.GetAndMoveNext(TokenType.LeftParentheses, $"{type} name");
-
         List<Token> parameters = [];
-        bool isFirstParam = true;
-        while (_scanner.Current.Type != TokenType.RightParentheses)
+        if (type != FunctionType.Property)
         {
-            if (!isFirstParam)
+            _scanner.GetAndMoveNext(TokenType.LeftParentheses, $"{type} name");
+
+
+            bool isFirstParam = true;
+            while (_scanner.Current.Type != TokenType.RightParentheses)
             {
-                _scanner.GetAndMoveNext(TokenType.Comma, $"{type} parameter");
+                if (!isFirstParam)
+                {
+                    _scanner.GetAndMoveNext(TokenType.Comma, $"{type} parameter");
+                    isFirstParam = false;
+                }
+                parameters.Add(_scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration"));
                 isFirstParam = false;
             }
-            parameters.Add(_scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration"));
-            isFirstParam = false;
+            _scanner.GetAndMoveNext(TokenType.RightParentheses, $"{type} parameter list");
         }
-        _scanner.GetAndMoveNext(TokenType.RightParentheses, $"{type} parameter list");
 
         PushState(name);
         try
@@ -158,16 +156,22 @@ public class Parser : IParser
             PopState(name);
         }
     }
-    private FunctionStatement ParseFunction(FunctionType type)
+
+    private FunctionStatement ParseFunctionDeclaration(bool isTopClassFunction)
     {
-        var name = _scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration");
+        if (!isTopClassFunction)
+        {
+            _scanner.GetAndMoveNext(TokenType.Fun, $"{FunctionType.Function} declaration");
+        }
+        var name = _scanner.GetAndMoveNext(TokenType.Identifier, $@"{FunctionType.Function}\{FunctionType.Property}\{FunctionType.Method} declaration");
+
+        var type = FunctionType.Function;
+        if (isTopClassFunction)
+        {
+            type = _scanner.Current.Type == TokenType.LeftParentheses ? FunctionType.Method : FunctionType.Property;
+        }
         var (parameters, body) = ParseLambdaParametersAndBody(type, name);
-        return new(name, parameters, body);
-    }
-    private FunctionStatement ParseFunctionDeclaration()
-    {
-        _scanner.GetAndMoveNext(TokenType.Fun, $"{FunctionType.Function} declaration");
-        return ParseFunction(FunctionType.Function);
+        return new(name, parameters, type, body);
     }
     private Statement ParseStatement() => _scanner.Current.Type switch
     {

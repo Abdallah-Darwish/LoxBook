@@ -338,4 +338,29 @@ print cnt._val;
 
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void TestVisitGet_VisitProperty_ShouldInvokeProperty()
+    {
+        string source = """
+class Cls
+{
+    init(name)
+    {
+        this._name = name;
+    }
+    hello
+    {
+        return "Hello from " + this._name;
+    }
+}
+var c = Cls("abd");
+print c.hello;
+""";
+
+        var result = Utility.Interpret<string>(source);
+        string[] expected = ["Hello from abd"];
+
+        Assert.Equal(expected, result);
+    }
 }

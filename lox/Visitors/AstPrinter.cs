@@ -1,4 +1,5 @@
 using Lox.Core;
+using Lox.Parsers;
 using System.Text;
 
 namespace Lox.Visitors;
@@ -17,7 +18,7 @@ public class AstPrinter(IExpressionVisitor<bool> expressionHasStatementVisitor) 
         string sep = isExpression ? string.Empty : _indentation;
         res.Append(sep).Append(isExpression ? '[' : '{');
         sep = " ";
-        var push = ops.Any(op => op is Statement) || ops.Where(e => e is Expression).Any(e => ((Expression)e!).Accept(_expressionHasStatementVisitor));
+        var push = ops.Any(op => op is Statement) || ops.Any(e => e is Expression expr && expr.Accept(_expressionHasStatementVisitor));
         if (push)
         {
             Push();
@@ -118,7 +119,7 @@ public class AstPrinter(IExpressionVisitor<bool> expressionHasStatementVisitor) 
 
     public string Visit(BreakStatement s) => Parenthesize(false, "break");
 
-    public string Visit(FunctionStatement s) => Parenthesize(false, ["fun", s.Name, "(", .. s.Parameters, ")", .. s.Body]);
+    public string Visit(FunctionStatement s) => Parenthesize(false, [s.Type != FunctionType.Property ? "fun" : null, s.Name, .. (s.Type == FunctionType.Property ? Array.Empty<object>() : ["(", .. s.Parameters, ")"]), .. s.Body]);
 
     public string Visit(ReturnStatement s) => Parenthesize(false, s.Return, s.Value);
 

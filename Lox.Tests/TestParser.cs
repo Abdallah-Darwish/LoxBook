@@ -429,4 +429,33 @@ class Cls
         Assert.Contains("Can't return a value from an initializer.", ex.Message);
         Assert.Equal("return", ex.Token!.Text);
     }
+
+    [Fact]
+    public void TestParseProperty_ClassWithPropertiesAndMethods_ShouldParsePropertyAsFunction()
+    {
+        string source = """
+class Circle {
+  init(radius) {
+    this.radius = radius;
+  }
+
+  area {
+    return 3.14 * this.radius * this.radius;
+  }
+}
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ class Circle
+    { fun init ( radius )
+        { [ this . radius = radius ] }
+    }
+    { area
+        { return [ [ 3.14 * [ this . radius ] ] * [ this . radius ] ] }
+    }
+}
+""";
+
+        Assert.Equal(expected, stmt);
+    }
 }

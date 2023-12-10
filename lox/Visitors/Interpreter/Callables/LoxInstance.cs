@@ -12,19 +12,21 @@ public class LoxInstance(LoxClass klass)
 
     public override string ToString() => $"{Klass.Name} instance";
 
-    public object? Get(string name, GetExpression? source = null)
+    public object? Get(string name, Interpreter interpreter, GetExpression? source = null)
     {
         if (_fields.TryGetValue(name, out var val))
         {
             return val;
         }
-        if (_boundMethods.TryGetValue(name, out var method))
+        if (!_boundMethods.TryGetValue(name, out var method))
         {
-            return method;
+            method = Klass.FindMethod(name)?.Bind(this) ?? throw new UndefinedPropertyException(this, name, source);
+            _boundMethods[name] = method;
         }
-        method = Klass.FindMethod(name)?.Bind(this) ?? throw new UndefinedPropertyException(this, name, source);
-        _boundMethods[name] = method;
-
+        if (method.IsProperty)
+        {
+            return method.Call(interpreter, []);
+        }
         return method;
     }
 
