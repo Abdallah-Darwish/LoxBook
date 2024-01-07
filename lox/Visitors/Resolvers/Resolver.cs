@@ -1,4 +1,5 @@
 using Lox.Core;
+using Lox.Visitors.Interpreters.Callables;
 using Lox.Visitors.Interpreters.Environments;
 using Lox.Visitors.Resolvers.Exceptions;
 
@@ -12,6 +13,8 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         public bool IsDefined { get; set; } = false;
         public bool IsUsed { get; set; } = false;
     }
+
+    private record class Scope(List<string> Names, bool IsClass);
 
     public Resolver(IEnumerable<string> globals, IDictionary<Token, ResolvedToken> store)
     {
@@ -29,10 +32,10 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     }
 
     private readonly IDictionary<Token, ResolvedToken> _store;
-    private readonly Stack<List<string>> _scopes = [];
+    private readonly Stack<Scope> _scopes = [];
     private readonly Dictionary<string, Stack<ScopeVariable>> _cactusStack = [];
-    private void BeginScope() => _scopes.Push([]);
-    private void EndScope()
+    private void BeginScope(bool isClassScope = false) => _scopes.Push(new([], isClassScope));
+    private void EndScope(bool checkVariableUsage)
     {
         if (_scopes.Count == 1)
         {
@@ -40,17 +43,21 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         }
 
         var lastScope = _scopes.Pop();
-        foreach (var scopeVar in lastScope)
+        foreach (var scopeVar in lastScope.Names)
         {
             var cactusVar = _cactusStack[scopeVar].Pop();
-            if (!cactusVar.IsUsed)
+            if (checkVariableUsage && !cactusVar.IsUsed)
             {
                 throw new UnusedVariableException(cactusVar.Token);
             }
         }
     }
+    private bool IsInClass => _scopes.Peek().IsClass;
     private int Depth => _scopes.Count - 1;
 
+    /// <param name="isParam">
+    /// If <see langword="true/> it will this name to shadow any previously defined names else it will allow it to shadow names with depth less than 2.
+    /// </param>
     private void Declare(Token name, bool isParam = false)
     {
         if (!_cactusStack.TryGetValue(name.Text, out var varStack))
@@ -63,26 +70,26 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         }
 
         var lastScope = _scopes.Peek();
-        varStack.Push(new(name, lastScope.Count, Depth));
-        lastScope.Add(name.Text);
+        varStack.Push(new(name, lastScope.Names.Count, Depth));
+        lastScope.Names.Add(name.Text);
     }
 
 
-    private void Define(Token name)
+    private void Define(Token name, bool markUsed = false)
     {
         _cactusStack[name.Text].Peek().IsDefined = true;
-        Resolve(name, false);
+        Resolve(name, markUsed);
     }
 
     private ScopeVariable GetVariable(Token name)
     {
-        _cactusStack.TryGetValue(name.Text, out var varScope);
-        if (varScope is null)
+        _cactusStack.TryGetValue(name.Text, out var varStack);
+        if (varStack is null)
         {
             throw new UndefinedIdentifierException(name);
         }
 
-        varScope.TryPeek(out var localVar);
+        varStack.TryPeek(out var localVar);
         return localVar ?? throw new UndefinedIdentifierException(name);
     }
 
@@ -105,7 +112,7 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     /// <remarks>
     /// We can't go through <see cref="Declare"/> -> <see cref="Define"/> -> <see cref="Resolve"/> because it will check for duplicates.
     /// </remarks>
-    private void DirectResolve(Token name) => _store.Add(name, new(name, _scopes.Peek().Count, Depth));
+    private void DirectResolve(Token name) => _store.Add(name, new(name, _scopes.Peek().Names.Count, Depth));
 
     public void Visit(ExpressionStatement s) => s.Expression.Accept(this);
 
@@ -125,6 +132,8 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     public void Visit(BlockStatement s)
     {
         BeginScope();
+
+        bool threwException = false;
         try
         {
             foreach (var stmt in s.Statements)
@@ -132,10 +141,12 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
                 stmt.Accept(this);
             }
         }
-        finally
+        catch
         {
-            EndScope();
+            threwException = true;
+            throw;
         }
+        finally { EndScope(!threwException); }
     }
 
     public void Visit(IfStatement s)
@@ -157,7 +168,10 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     {
         Declare(s.Name);
         Define(s.Name);
+        bool isInClass = IsInClass;
         BeginScope();
+
+        bool threwException = false;
         try
         {
             foreach (var param in s.Parameters)
@@ -165,15 +179,23 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
                 Declare(param, true);
                 Define(param);
             }
+            if (isInClass)
+            {
+                var thisToken = Token.This with { Line = s.Name.Line, Column = s.Name.Column };
+                Declare(thisToken, true);
+                Define(thisToken, true);
+            }
             foreach (var stmt in s.Body)
             {
                 stmt.Accept(this);
             }
         }
-        finally
+        catch
         {
-            EndScope();
+            threwException = true;
+            throw;
         }
+        finally { EndScope(!threwException); }
     }
 
     public void Visit(ReturnStatement s) => s.Value?.Accept(this);
@@ -219,6 +241,8 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         DirectResolve(e.Fun);
 
         BeginScope();
+
+        var threwException = false;
         try
         {
             foreach (var param in e.Parameters)
@@ -231,9 +255,38 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
                 stmt.Accept(this);
             }
         }
-        finally
+        catch
         {
-            EndScope();
+            threwException = true;
+            throw;
         }
+        finally { EndScope(!threwException); }
     }
+
+    public void Visit(ClassStatement s)
+    {
+        Declare(s.Name);
+        Define(s.Name);
+
+        BeginScope(true);
+
+        try
+        {
+            foreach (var meth in s.Methods)
+            {
+                meth.Accept(this);
+            }
+        }
+        finally { EndScope(false); }
+    }
+
+    public void Visit(GetExpression e) => e.Instance.Accept(this);
+
+    public void Visit(SetExpression e)
+    {
+        e.Instance.Accept(this);
+        e.Value.Accept(this);
+    }
+
+    public void Visit(ThisExpression e) => Resolve(e.This, true);
 }

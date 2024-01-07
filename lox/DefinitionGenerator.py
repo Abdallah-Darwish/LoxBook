@@ -136,19 +136,23 @@ Variable    : Token Name
 Assignment  : Token Name, $base$ Value
 Call        : $base$ Callee, Token RightParentheses, $base$[] Arguments
 Lambda      : Token Fun, IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body
+Get         : $base$ Instance, Token Name
+Set         : $base$ Instance, Token Name, $base$ Value
+This        : Token This
 """
 expressions = Ast('Core', 'Expression', expressions_ast_txt, VisitorVariant.ALL)
 
 statements_ast_txt = """
-Expression : Expression Expression
-Print      : Expression Expression
-Variable   : Token Name, Expression? Initializer
-Block      : IReadOnlyList<$base$> Statements
-If         : Expression Condition, $base$ Then, $base$? Else
-While      : Expression Condition, $base$ Body
-Break      :
-Function   : Token Name, IReadOnlyList<Token> Parameters, IReadOnlyList<$base$> Body
-Return     : Token Return, Expression? Value
+Expression  : Expression Expression
+Print       : Expression Expression
+Variable    : Token Name, Expression? Initializer
+Block       : IReadOnlyList<$base$> Statements
+If          : Expression Condition, $base$ Then, $base$? Else
+While       : Expression Condition, $base$ Body
+Break       :
+Function    : Token Name, IReadOnlyList<Token> Parameters, FunctionType Type, IReadOnlyList<$base$> Body
+Return      : Token Return, Expression? Value
+Class       : Token Name, IReadOnlyList<Function$base$> Methods
 """
 statements = Ast('Core', 'Statement', statements_ast_txt, VisitorVariant.ALL)
 

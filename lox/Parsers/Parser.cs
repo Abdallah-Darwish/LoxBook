@@ -1,29 +1,40 @@
 using Lox.Core;
 using Lox.Scanners;
 
+
 namespace Lox.Parsers;
-public enum FunctionType
-{
-    Function,
-    Method,
-    Lambda
-}
 public class Parser : IParser
 {
     private IScanner _scanner;
     private int _loopDepth = 0;
     private bool IsInLoopRule => _loopDepth > 0;
-    private int _functionDepth = 0;
-    private bool IsInFunctionBody => _functionDepth > 0;
-    private readonly Stack<(int LoopDepth, int FunctionDepth)> _state = [];
-    private void PushState()
+    private readonly Stack<Token?> _functionsNames = [];
+    private bool IsInFunctionBody => _functionsNames.Count > 0;
+    private Token? CurrentFunctionName => _functionsNames.Peek();
+
+    private int _classDepth = 0;
+    private bool IsInClassBody => _classDepth > 0;
+    /// <remarks>
+    /// Doesn't store class state.
+    /// </summary>
+    private readonly Stack<int> _loopState = [];
+    private void PushState(Token? functionName)
     {
-        _state.Push((_loopDepth, _functionDepth));
+        _functionsNames.Push(functionName);
+        _loopState.Push(_loopDepth);
         _loopDepth = 0;
-        _functionDepth = 1;
     }
 
-    private void PopState() => (_loopDepth, _functionDepth) = _state.Pop();
+    private void PopState(Token? functionName)
+    {
+        if (CurrentFunctionName != functionName)
+        {
+            throw new InvalidOperationException($"Pushed function name({CurrentFunctionName.Text}) != Popped function name({functionName.Text})");
+        }
+        _functionsNames.Pop();
+
+        _loopDepth = _loopState.Pop();
+    }
     private bool _disposed;
 
     private void CheckDisposed()
@@ -70,9 +81,34 @@ public class Parser : IParser
         return _scanner.Current.Type switch
         {
             TokenType.Var => ParseVariableDeclaration(),
-            TokenType.Fun => ParseFunctionDeclaration(),
+            TokenType.Fun => ParseFunctionDeclaration(false),
+            TokenType.Class => ParseClassDeclaration(),
             _ => ParseStatement()
         };
+    }
+    private ClassStatement ParseClassDeclaration()
+    {
+        _scanner.GetAndMoveNext(TokenType.Class);
+        var name = _scanner.GetAndMoveNext(TokenType.Identifier);
+        _scanner.GetAndMoveNext(TokenType.LeftBrace, "class name");
+
+        _classDepth++;
+        try
+        {
+            List<FunctionStatement> methods = [];
+            while (_scanner.Current.Type != TokenType.RightBrace)
+            {
+                methods.Add(ParseFunctionDeclaration(true));
+            }
+            _scanner.GetAndMoveNext(TokenType.RightBrace);
+            return new(name, methods);
+        }
+        finally
+        {
+            _classDepth--;
+        }
+
+
     }
     private VariableStatement ParseVariableDeclaration()
     {
@@ -88,44 +124,54 @@ public class Parser : IParser
         _scanner.GetAndMoveNext(TokenType.Semicolon, "variable declaration");
         return new(id, init);
     }
-    private (IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body) ParseLambdaParametersAndBody(FunctionType type)
+    private (IReadOnlyList<Token> Parameters, IReadOnlyList<Statement> Body) ParseLambdaParametersAndBody(FunctionType type, Token? name)
     {
-        _scanner.GetAndMoveNext(TokenType.LeftParentheses, $"{type} name");
-
         List<Token> parameters = [];
-        bool isFirstParam = true;
-        while (_scanner.Current.Type != TokenType.RightParentheses)
+        if (type != FunctionType.Property)
         {
-            if (!isFirstParam)
+            _scanner.GetAndMoveNext(TokenType.LeftParentheses, $"{type} name");
+
+
+            bool isFirstParam = true;
+            while (_scanner.Current.Type != TokenType.RightParentheses)
             {
-                _scanner.GetAndMoveNext(TokenType.Comma, $"{type} parameter");
+                if (!isFirstParam)
+                {
+                    _scanner.GetAndMoveNext(TokenType.Comma, $"{type} parameter");
+                    isFirstParam = false;
+                }
+                parameters.Add(_scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration"));
                 isFirstParam = false;
             }
-            parameters.Add(_scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration"));
-            isFirstParam = false;
+            _scanner.GetAndMoveNext(TokenType.RightParentheses, $"{type} parameter list");
         }
-        _scanner.GetAndMoveNext(TokenType.RightParentheses, $"{type} parameter list");
 
-        PushState();
+        PushState(name);
         try
         {
             return (parameters, ParseBlock());
         }
         finally
         {
-            PopState();
+            PopState(name);
         }
     }
-    private FunctionStatement ParseFunction(FunctionType type)
+
+    private FunctionStatement ParseFunctionDeclaration(bool isTopClassFunction)
     {
-        var id = _scanner.GetAndMoveNext(TokenType.Identifier, $"{type} declaration");
-        var (parameters, body) = ParseLambdaParametersAndBody(type);
-        return new(id, parameters, body);
-    }
-    private FunctionStatement ParseFunctionDeclaration()
-    {
-        _scanner.GetAndMoveNext(TokenType.Fun, $"{FunctionType.Function} declaration");
-        return ParseFunction(FunctionType.Function);
+        if (!isTopClassFunction)
+        {
+            _scanner.GetAndMoveNext(TokenType.Fun, $"{FunctionType.Function} declaration");
+        }
+        var name = _scanner.GetAndMoveNext(TokenType.Identifier, $@"{FunctionType.Function}\{FunctionType.Property}\{FunctionType.Method} declaration");
+
+        var type = FunctionType.Function;
+        if (isTopClassFunction)
+        {
+            type = _scanner.Current.Type == TokenType.LeftParentheses ? FunctionType.Method : FunctionType.Property;
+        }
+        var (parameters, body) = ParseLambdaParametersAndBody(type, name);
+        return new(name, parameters, type, body);
     }
     private Statement ParseStatement() => _scanner.Current.Type switch
     {
@@ -151,6 +197,12 @@ public class Parser : IParser
             val = ParseExpression();
         }
         _scanner.GetAndMoveNext(TokenType.Semicolon, "return keyword");
+
+        if (IsInClassBody && CurrentFunctionName.Text == "init" && val is not null)
+        {
+            //This would catch valid cases where a class->func->init->return 1; but I wouldn't worry about it now
+            throw new ParserException("Can't return a value from an initializer.", ret);
+        }
         return new(ret, val);
     }
     private BreakStatement ParseBreak()
@@ -287,14 +339,14 @@ public class Parser : IParser
         {
             return name;
         }
-        if (name is not VariableExpression varExpr)
+        if (name is not VariableExpression and not GetExpression)
         {
-            throw new ParserException($"Expected a expression of type {nameof(VariableExpression)} instead found {name.GetType().Name}", _scanner.Current);
+            throw new ParserException($"Expected a expression of type {nameof(VariableExpression)} or {nameof(GetExpression)} instead found {name.GetType().Name}", _scanner.Current);
         }
         _scanner.GetAndMoveNext();
 
         var val = ParseAssignment();
-        return new AssignmentExpression(varExpr.Name, val);
+        return name is GetExpression getExpr ? new SetExpression(getExpr.Instance, getExpr.Name, val) : new AssignmentExpression((name as VariableExpression)!.Name, val);
     }
 
     private Expression ParseTernary()
@@ -395,25 +447,35 @@ public class Parser : IParser
     }
     private Expression ParseCall()
     {
-        var callee = ParseLambda();
+        var lhs = ParseLambda();
         while (true)
         {
             // Its done this way to handle syntaxes like Func(1, 2)(3, 4)(5, 6)
             if (_scanner.Current.Type == TokenType.LeftParentheses)
             {
-                if (callee is LiteralExpression literal)
+                if (lhs is LiteralExpression literal)
                 {
-                    throw new ParserException("Literals are not callable", literal.Value);
+                    throw new ParserException("Literals are not callable.", literal.Value);
                 }
                 var (rightParentheses, arguemnts) = ParseArguments();
-                callee = new CallExpression(callee, rightParentheses, arguemnts);
+                lhs = new CallExpression(lhs, rightParentheses, arguemnts);
+            }
+            else if (_scanner.Current.Type == TokenType.Dot)
+            {
+                if (lhs is LiteralExpression literal)
+                {
+                    throw new ParserException("Literals can't appear before '.'.", literal.Value);
+                }
+                _scanner.GetAndMoveNext();
+                var name = _scanner.GetAndMoveNext(TokenType.Identifier, "access operator '.'");
+                lhs = new GetExpression(lhs, name);
             }
             else
             {
                 break;
             }
         }
-        return callee;
+        return lhs;
     }
     private (Token RightParentheses, Expression[] Arguemnts) ParseArguments()
     {
@@ -444,13 +506,21 @@ public class Parser : IParser
         if (_scanner.Current.Type == TokenType.Fun)
         {
             var fun = _scanner.GetAndMoveNext();
-            var (parameters, body) = ParseLambdaParametersAndBody(FunctionType.Lambda);
+            var (parameters, body) = ParseLambdaParametersAndBody(FunctionType.Lambda, null);
             return new LambdaExpression(fun, parameters, body);
         }
         return ParsePrimary();
     }
     private Expression ParsePrimary()
     {
+        if (_scanner.Current.Type == TokenType.This)
+        {
+            if (!IsInClassBody)
+            {
+                throw new ParserException("Can't use 'this' outside class.", _scanner.Current);
+            }
+            return new ThisExpression(_scanner.GetAndMoveNext());
+        }
         if (_scanner.Current.Type is TokenType.Number or TokenType.String or TokenType.True or TokenType.False
             or TokenType.Nil)
         {

@@ -1,6 +1,5 @@
 using Lox.Core;
 using Lox.Visitors;
-using Lox.Visitors.Interpreters;
 
 namespace Lox.Tests.Utilities;
 
@@ -19,4 +18,6 @@ public class ParserBuffer : IStatementVisitor
     public void Visit(BreakStatement s) => Push(s);
     public void Visit(FunctionStatement s) => Push(s);
     public void Visit(ReturnStatement s) => Push(s);
+
+    public void Visit(ClassStatement s) => Push(s);
 }

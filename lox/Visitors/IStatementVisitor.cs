@@ -13,6 +13,7 @@ public interface IStatementVisitor
     void Visit(BreakStatement s);
     void Visit(FunctionStatement s);
     void Visit(ReturnStatement s);
+    void Visit(ClassStatement s);
 }
 public interface IStatementVisitor<T>
 {
@@ -25,4 +26,5 @@ public interface IStatementVisitor<T>
     T Visit(BreakStatement s);
     T Visit(FunctionStatement s);
     T Visit(ReturnStatement s);
+    T Visit(ClassStatement s);
 }

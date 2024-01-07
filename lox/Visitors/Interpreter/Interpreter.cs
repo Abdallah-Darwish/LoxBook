@@ -203,7 +203,7 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
     public object? Visit(CallExpression e)
     {
         var callee = e.Callee.Accept(this);
-        if (callee is not ILoxCallable loxCallee)
+        if (callee is not ILoxCallable loxCallee || loxCallee.IsProperty)
         {
             throw new CallableExpectedException(e.RightParentheses);
         }
@@ -221,7 +221,40 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
 
     public object? Visit(LambdaExpression e)
     {
-        new FunctionStatement(e.Fun, e.Parameters, e.Body).Accept(this);
+        new FunctionStatement(e.Fun, e.Parameters, FunctionType.Lambda, e.Body).Accept(this);
         return _environment.Get(_resolverStore[e.Fun]);
     }
+
+    public object? Visit(GetExpression e)
+    {
+        var lhs = e.Instance.Accept(this);
+
+        if (lhs is not LoxInstance instance)
+        {
+            throw new ObjectExpectedException(lhs, e.Instance);
+        }
+
+        return instance.Get(e.Name.Text, this, e);
+    }
+
+    public void Visit(ClassStatement s)
+    {
+        LoxClass klass = new(s, _resolverStore, _environment);
+        _environment.Define(_resolverStore[s.Name], klass);
+    }
+
+    public object? Visit(SetExpression e)
+    {
+        var lhs = e.Instance.Accept(this);
+        if (lhs is not LoxInstance instance)
+        {
+            throw new ObjectExpectedException(lhs, e.Instance);
+        }
+
+        var val = e.Value.Accept(this);
+        instance.Set(e.Name.Text, val);
+        return val;
+    }
+
+    public object? Visit(ThisExpression e) => _environment.Get(_resolverStore[e.This]);
 }

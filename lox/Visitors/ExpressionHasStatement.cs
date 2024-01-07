@@ -21,4 +21,10 @@ public class ExpressionHasStatement : IExpressionVisitor<bool>
     public bool Visit(CallExpression e) => e.Callee.Accept(this) || e.Arguments.Any(a => a.Accept(this));
 
     public bool Visit(LambdaExpression e) => true;
+
+    public bool Visit(GetExpression e) => e.Instance.Accept(this);
+
+    public bool Visit(SetExpression e) => e.Instance.Accept(this) || e.Value.Accept(this);
+
+    public bool Visit(ThisExpression e) => false;
 }

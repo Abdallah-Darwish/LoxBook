@@ -222,4 +222,145 @@ print fn1(1, 2);
         var ex = Assert.Throws<UnusedVariableException>(() => Utility.Interpret(source));
         Assert.Equal("y", ex.SourceToken.Text);
     }
+
+    [Fact]
+    public void TestVisitClass_ClassDefinition_ShouldParseClass()
+    {
+        string source = """
+class MetroBoomin
+{
+    Hello()
+    {
+        print "hello there";
+    }
+}
+print MetroBoomin;
+""";
+
+        var result = Utility.InterpretToString(source);
+        string[] expected = ["MetroBoomin"];
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestVisitClass_InstantiateClass_WouldReturnInstance()
+    {
+        string source = """
+class Arctic
+{
+    Sing()
+    {
+        print "I am goint back to 505";
+    }
+}
+var instance = Arctic();
+print instance;
+""";
+
+        var result = Utility.InterpretToString(source);
+        string[] expected = ["Arctic instance"];
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestVisitCall_CallMethod_WouldCallMethodAndBindThis()
+    {
+        string source = """
+class Counter
+{
+
+    SetValue(val)
+    {
+        this._value = val;
+    }
+
+    Increment(addition)
+    {
+        this._value = this._value + addition;
+        return this._value;
+    }
+}
+var cnt = Counter();
+cnt.SetValue(0);
+print cnt.Increment(1);
+print cnt.Increment(2);
+print cnt.Increment(3);
+""";
+
+        var result = Utility.Interpret<double>(source);
+        double[] expected = [1, 3, 6];
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestVisitFunction_InvokeCtorDirectly_WouldReturnTheInstance()
+    {
+        string source = """
+class Cls
+{
+    init(val)
+    {
+        this._val = val;
+    }
+}
+var cnt = Cls(1);
+var x = cnt.init(2);
+print x;
+print x._val;
+""";
+
+        var result = Utility.InterpretToString(source);
+        string[] expected = ["Cls instance", "2"];
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestVisitCall_CreateObjectWithExplicitCtor_ShouldCallCtorAfterCreatingObject()
+    {
+        string source = """
+class Cls
+{
+    init(val)
+    {
+        this._val = val;
+    }
+}
+var cnt = Cls(1);
+print cnt._val;
+""";
+
+        var result = Utility.Interpret<double>(source);
+        double[] expected = [1];
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestVisitGet_VisitProperty_ShouldInvokeProperty()
+    {
+        string source = """
+class Cls
+{
+    init(name)
+    {
+        this._name = name;
+    }
+    hello
+    {
+        return "Hello from " + this._name;
+    }
+}
+var c = Cls("abd");
+print c.hello;
+""";
+
+        var result = Utility.Interpret<string>(source);
+        string[] expected = ["Hello from abd"];
+
+        Assert.Equal(expected, result);
+    }
 }
