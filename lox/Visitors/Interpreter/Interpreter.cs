@@ -239,7 +239,16 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
 
     public void Visit(ClassStatement s)
     {
+        if (s.Super != null)
+        {
+            var super = _environment.Get(_resolverStore[s.Super]);
+            if (super is not LoxClass superKlass)
+            {
+                throw new ClassExpectedException(s.Super);
+            }
+        }
         LoxClass klass = new(s, _resolverStore, _environment);
+
         _environment.Define(_resolverStore[s.Name], klass);
     }
 

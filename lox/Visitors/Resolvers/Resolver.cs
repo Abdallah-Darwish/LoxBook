@@ -268,6 +268,16 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         Declare(s.Name);
         Define(s.Name);
 
+        if (s.Super is not null)
+        {
+            if (s.Super.Lexeme == s.Name.Lexeme)
+            {
+                throw new ResolverException("A class can't inherit from itself.", s.Name);
+            }
+
+            Resolve(s.Super, true);
+        }
+
         BeginScope(true);
 
         try

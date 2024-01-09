@@ -79,3 +79,9 @@ public record class ThisExpression(Token This) : Expression
     public override void Accept(IExpressionVisitor visitor) => visitor.Visit(this);
     public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
 }
+
+public record class SuperExpression(Token Super, Token Name) : Expression
+{
+    public override void Accept(IExpressionVisitor visitor) => visitor.Visit(this);
+    public override T Accept<T>(IExpressionVisitor<T> visitor) => visitor.Visit(this);
+}

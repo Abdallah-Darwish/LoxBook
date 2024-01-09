@@ -16,6 +16,7 @@ public interface IExpressionVisitor
     void Visit(GetExpression e);
     void Visit(SetExpression e);
     void Visit(ThisExpression e);
+    void Visit(SuperExpression e);
 }
 public interface IExpressionVisitor<T>
 {
@@ -31,4 +32,5 @@ public interface IExpressionVisitor<T>
     T Visit(GetExpression e);
     T Visit(SetExpression e);
     T Visit(ThisExpression e);
+    T Visit(SuperExpression e);
 }

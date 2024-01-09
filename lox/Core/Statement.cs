@@ -62,7 +62,7 @@ public record class ReturnStatement(Token Return, Expression? Value) : Statement
     public override T Accept<T>(IStatementVisitor<T> visitor) => visitor.Visit(this);
 }
 
-public record class ClassStatement(Token Name, IReadOnlyList<FunctionStatement> Methods) : Statement
+public record class ClassStatement(Token Name, Token Super, IReadOnlyList<FunctionStatement> Methods) : Statement
 {
     public override void Accept(IStatementVisitor visitor) => visitor.Visit(this);
     public override T Accept<T>(IStatementVisitor<T> visitor) => visitor.Visit(this);

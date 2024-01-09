@@ -125,9 +125,11 @@ public class AstPrinter(IExpressionVisitor<bool> expressionHasStatementVisitor) 
 
     public string Visit(GetExpression e) => Parenthesize(true, e.Instance, ".", e.Name);
 
-    public string Visit(ClassStatement s) => Parenthesize(false, ["class", s.Name, .. s.Methods]);
+    public string Visit(ClassStatement s) => Parenthesize(false, ["class", s.Name, .. (s.Super is null ? Array.Empty<object>() : ["<", s.Super])..s.Methods]);
 
     public string Visit(SetExpression e) => Parenthesize(true, e.Instance, ".", e.Name, "=", e.Value);
 
     public string Visit(ThisExpression e) => "this";
+
+    public string Visit(SuperExpression e) => $"super.{e.Name.Lexeme}";
 }

@@ -26,4 +26,6 @@ public class ReversePolishNotationPrinter : IExpressionVisitor<string>
     public string Visit(SetExpression e) => throw new NotImplementedException();
 
     public string Visit(ThisExpression e) => throw new NotImplementedException();
+
+    public string Visit(SuperExpression e) => throw new NotImplementedException();
 }

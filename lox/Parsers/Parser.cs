@@ -90,6 +90,12 @@ public class Parser : IParser
     {
         _scanner.GetAndMoveNext(TokenType.Class);
         var name = _scanner.GetAndMoveNext(TokenType.Identifier);
+        Token? super = null;
+        if (_scanner.Current.Type == TokenType.Less)
+        {
+            _scanner.GetAndMoveNext();
+            super = _scanner.GetAndMoveNext(TokenType.Identifier, "inherit operator");
+        }
         _scanner.GetAndMoveNext(TokenType.LeftBrace, "class name");
 
         _classDepth++;
@@ -101,7 +107,7 @@ public class Parser : IParser
                 methods.Add(ParseFunctionDeclaration(true));
             }
             _scanner.GetAndMoveNext(TokenType.RightBrace);
-            return new(name, methods);
+            return new(name, super, methods);
         }
         finally
         {
@@ -529,6 +535,13 @@ public class Parser : IParser
         if (_scanner.Current.Type == TokenType.Identifier)
         {
             return new VariableExpression(_scanner.GetAndMoveNext());
+        }
+        if (_scanner.Current.Type == TokenType.Super)
+        {
+            var super = _scanner.GetAndMoveNext();
+            _scanner.GetAndMoveNext(TokenType.Dot, "super keyword");
+            var name = _scanner.GetAndMoveNext(TokenType.Identifier, "super accessor");
+            return new SuperExpression(super, name);
         }
 
         _scanner.GetAndMoveNext(TokenType.LeftParentheses);

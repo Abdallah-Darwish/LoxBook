@@ -139,6 +139,7 @@ Lambda      : Token Fun, IReadOnlyList<Token> Parameters, IReadOnlyList<Statemen
 Get         : $base$ Instance, Token Name
 Set         : $base$ Instance, Token Name, $base$ Value
 This        : Token This
+Super       : Token Super, Token Name
 """
 expressions = Ast('Core', 'Expression', expressions_ast_txt, VisitorVariant.ALL)
 
@@ -152,7 +153,7 @@ While       : Expression Condition, $base$ Body
 Break       :
 Function    : Token Name, IReadOnlyList<Token> Parameters, FunctionType Type, IReadOnlyList<$base$> Body
 Return      : Token Return, Expression? Value
-Class       : Token Name, IReadOnlyList<Function$base$> Methods
+Class       : Token Name, Token? Super, IReadOnlyList<Function$base$> Methods
 """
 statements = Ast('Core', 'Statement', statements_ast_txt, VisitorVariant.ALL)
 

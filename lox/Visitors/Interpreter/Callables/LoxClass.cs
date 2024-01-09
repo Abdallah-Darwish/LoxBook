@@ -7,9 +7,10 @@ namespace Lox.Visitors.Interpreters.Callables;
 
 public class LoxClass : ILoxCallable
 {
-    public LoxClass(ClassStatement declaration, IReadOnlyDictionary<Token, ResolvedToken> resolverStore, ILoxEnvironment closure)
+    public LoxClass(ClassStatement declaration, LoxClass super, IReadOnlyDictionary<Token, ResolvedToken> resolverStore, ILoxEnvironment closure)
     {
         _declaration = declaration;
+        _super = super;
         var methodsClosure = closure.Push(); // We do this because the class will open a scope for it self
         _methods = declaration.Methods.ToDictionary(m => m.Name.Text, m => new LoxFunction(m, m.Parameters.Select(p => resolverStore[p]).ToArray(), methodsClosure));
         _methods.TryGetValue("init", out _initializer);
@@ -18,6 +19,7 @@ public class LoxClass : ILoxCallable
             _initializer = null;
         }
     }
+    private readonly LoxClass _super;
     private readonly ClassStatement _declaration;
     private readonly IReadOnlyDictionary<string, LoxFunction> _methods;
     private readonly LoxFunction? _initializer;
@@ -40,5 +42,5 @@ public class LoxClass : ILoxCallable
 
     public override string ToString() => Name;
 
-    public LoxFunction? FindMethod(string name) => _methods.GetValueOrDefault(name);
+    public LoxFunction? FindMethod(string name) => _methods.GetValueOrDefault(name) ?? _super?.FindMethod(name);
 }
