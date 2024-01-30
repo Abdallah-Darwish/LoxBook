@@ -1,5 +1,4 @@
 using Lox.Core;
-using Lox.Visitors.Interpreters.Callables;
 using Lox.Visitors.Interpreters.Environments;
 using Lox.Visitors.Resolvers.Exceptions;
 
@@ -14,13 +13,13 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         public bool IsUsed { get; set; } = false;
     }
 
-    private record class Scope(List<string> Names, bool IsClass);
+    private record class Scope(List<string> Names, Statement? Definition);
 
     public Resolver(IEnumerable<string> globals, IDictionary<Token, ResolvedToken> store)
     {
         _store = store;
 
-        BeginScope();
+        BeginScope(); // Start predfined globals scope
         foreach (var name in globals)
         {
             var nameToken = Token.FromIdentifier(name);
@@ -28,14 +27,14 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
             Define(nameToken);
         }
 
-        BeginScope();
+        BeginScope(); // Start user globals scope
     }
 
     private readonly IDictionary<Token, ResolvedToken> _store;
     private readonly Stack<Scope> _scopes = [];
     private readonly Dictionary<string, Stack<ScopeVariable>> _cactusStack = [];
-    private void BeginScope(bool isClassScope = false) => _scopes.Push(new([], isClassScope));
-    private void EndScope(bool checkVariableUsage)
+    private void BeginScope(Statement? definition = null) => _scopes.Push(new([], definition));
+    private void EndScope(bool checkVariableUsage, Statement? definition = null)
     {
         if (_scopes.Count == 1)
         {
@@ -43,6 +42,10 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         }
 
         var lastScope = _scopes.Pop();
+        if (!ReferenceEquals(lastScope.Definition, definition))
+        {
+            throw new InvalidOperationException("Popped scope definiton != pushed scope definition");
+        }
         foreach (var scopeVar in lastScope.Names)
         {
             var cactusVar = _cactusStack[scopeVar].Pop();
@@ -52,11 +55,11 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
             }
         }
     }
-    private bool IsInClass => _scopes.Peek().IsClass;
+    private bool IsInClass => _scopes.Peek().Definition is ClassStatement;
     private int Depth => _scopes.Count - 1;
 
     /// <param name="isParam">
-    /// If <see langword="true/> it will this name to shadow any previously defined names else it will allow it to shadow names with depth less than 2.
+    /// If <see langword="true/> it will allow this name to shadow any previously defined names else it will allow it to shadow names with depth less than 2.
     /// </param>
     private void Declare(Token name, bool isParam = false)
     {
@@ -131,7 +134,7 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
 
     public void Visit(BlockStatement s)
     {
-        BeginScope();
+        BeginScope(s);
 
         bool threwException = false;
         try
@@ -146,7 +149,7 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
             threwException = true;
             throw;
         }
-        finally { EndScope(!threwException); }
+        finally { EndScope(!threwException, s); }
     }
 
     public void Visit(IfStatement s)
@@ -169,7 +172,7 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         Declare(s.Name);
         Define(s.Name);
         bool isInClass = IsInClass;
-        BeginScope();
+        BeginScope(s);
 
         bool threwException = false;
         try
@@ -195,7 +198,7 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
             threwException = true;
             throw;
         }
-        finally { EndScope(!threwException); }
+        finally { EndScope(!threwException, s); }
     }
 
     public void Visit(ReturnStatement s) => s.Value?.Accept(this);
@@ -270,24 +273,25 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
 
         if (s.Super is not null)
         {
-            if (s.Super.Lexeme == s.Name.Lexeme)
-            {
-                throw new ResolverException("A class can't inherit from itself.", s.Name);
-            }
-
             Resolve(s.Super, true);
         }
 
-        BeginScope(true);
+        BeginScope(s);
 
         try
         {
+            if (s.Super is not null)
+            {
+                var superToken = Token.This with { Line = s.Super.Line, Column = s.Super.Column };
+                Declare(superToken, true);
+                Define(superToken, true);
+            }
             foreach (var meth in s.Methods)
             {
                 meth.Accept(this);
             }
         }
-        finally { EndScope(false); }
+        finally { EndScope(false, s); }
     }
 
     public void Visit(GetExpression e) => e.Instance.Accept(this);
@@ -299,4 +303,6 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     }
 
     public void Visit(ThisExpression e) => Resolve(e.This, true);
+
+    public void Visit(SuperExpression e) => Resolve(e.Super, true);
 }

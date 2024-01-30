@@ -78,4 +78,5 @@ public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
     public static Token FromBool(bool val) => new(-1, -1, val ? TokenType.True : TokenType.False, null);
 
     public static Token This { get; } = new(-1, -1, TokenType.This, "this");
+    public static Token Super { get; } = new(-1, -1, TokenType.Super, "super");
 }

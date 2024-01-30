@@ -27,4 +27,6 @@ public class ExpressionHasStatement : IExpressionVisitor<bool>
     public bool Visit(SetExpression e) => e.Instance.Accept(this) || e.Value.Accept(this);
 
     public bool Visit(ThisExpression e) => false;
+
+    public bool Visit(SuperExpression e) => false;
 }

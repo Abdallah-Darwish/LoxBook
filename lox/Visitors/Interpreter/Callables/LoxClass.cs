@@ -7,7 +7,7 @@ namespace Lox.Visitors.Interpreters.Callables;
 
 public class LoxClass : ILoxCallable
 {
-    public LoxClass(ClassStatement declaration, LoxClass super, IReadOnlyDictionary<Token, ResolvedToken> resolverStore, ILoxEnvironment closure)
+    public LoxClass(ClassStatement declaration, LoxClass? super, IReadOnlyDictionary<Token, ResolvedToken> resolverStore, ILoxEnvironment closure)
     {
         _declaration = declaration;
         _super = super;
@@ -19,7 +19,7 @@ public class LoxClass : ILoxCallable
             _initializer = null;
         }
     }
-    private readonly LoxClass _super;
+    private readonly LoxClass? _super;
     private readonly ClassStatement _declaration;
     private readonly IReadOnlyDictionary<string, LoxFunction> _methods;
     private readonly LoxFunction? _initializer;
@@ -35,7 +35,7 @@ public class LoxClass : ILoxCallable
         if (_initializer is not null)
         {
             var constructor = instance.Get("init", interpreter) as ILoxCallable;
-            constructor.Call(interpreter, arguments);
+            constructor!.Call(interpreter, arguments);
         }
         return instance;
     }

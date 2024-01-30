@@ -5,33 +5,49 @@ using Lox.Scanners;
 namespace Lox.Parsers;
 public class Parser : IParser
 {
+    private record class State(StateType Type, Token? MemberName);
+    private record class ClassState(StateType Type, Token? MemberName, Token SuperName) : State(Type, MemberName);
+    private enum StateType
+    {
+        Function,
+        Class
+    }
+
     private IScanner _scanner;
+
+    private readonly Stack<int> _loopState = [];
     private int _loopDepth = 0;
     private bool IsInLoopRule => _loopDepth > 0;
-    private readonly Stack<Token?> _functionsNames = [];
-    private bool IsInFunctionBody => _functionsNames.Count > 0;
-    private Token? CurrentFunctionName => _functionsNames.Peek();
 
-    private int _classDepth = 0;
-    private bool IsInClassBody => _classDepth > 0;
-    /// <remarks>
-    /// Doesn't store class state.
-    /// </summary>
-    private readonly Stack<int> _loopState = [];
-    private void PushState(Token? functionName)
+    private readonly Stack<State> _state = [];
+    private bool IsInFunctionBody => _state.TryPeek(out var fs) && fs.Type == StateType.Function;
+    private Token? CurrentFunctionName => _state.TryPeek(out var fs) && fs.Type == StateType.Function ? fs.MemberName : null;
+    private bool IsInClassBody => _state.TryPeek(out var cs) && cs is ClassState;
+    private Token? CurrentClassSuperName => _state.TryPeek(out var s) && s is ClassState cs ? cs.SuperName : null;
+
+    private void PushState(StateType type, Token? memberName, Token? superName)
     {
-        _functionsNames.Push(functionName);
+        State state = type switch
+        {
+            StateType.Function => new State(type, memberName),
+            StateType.Class => new ClassState(type, memberName, superName)
+        };
+        _state.Push(state);
         _loopState.Push(_loopDepth);
         _loopDepth = 0;
     }
 
-    private void PopState(Token? functionName)
+    private void PopState(StateType type, Token? memberName)
     {
-        if (CurrentFunctionName != functionName)
+        if (!_state.TryPop(out var state))
         {
-            throw new InvalidOperationException($"Pushed function name({CurrentFunctionName.Text}) != Popped function name({functionName.Text})");
+            throw new InvalidOperationException("There is no state to pop, invalid state stack.");
         }
-        _functionsNames.Pop();
+
+        if (state.Type != type || state.MemberName != memberName)
+        {
+            throw new InvalidOperationException($"Pushed state(Type: {state.Type}, Name: {state.MemberName?.Text}) != Popped state(Type: {type}, name: {memberName?.Text})");
+        }
 
         _loopDepth = _loopState.Pop();
     }
@@ -95,10 +111,14 @@ public class Parser : IParser
         {
             _scanner.GetAndMoveNext();
             super = _scanner.GetAndMoveNext(TokenType.Identifier, "inherit operator");
+            if (name.Lexeme == super.Lexeme)
+            {
+                throw new ParserException("A class can't inherit from itself.", super);
+            }
         }
         _scanner.GetAndMoveNext(TokenType.LeftBrace, "class name");
 
-        _classDepth++;
+        PushState(StateType.Class, name, super);
         try
         {
             List<FunctionStatement> methods = [];
@@ -111,10 +131,8 @@ public class Parser : IParser
         }
         finally
         {
-            _classDepth--;
+            PopState(StateType.Class, name);
         }
-
-
     }
     private VariableStatement ParseVariableDeclaration()
     {
@@ -152,17 +170,19 @@ public class Parser : IParser
             _scanner.GetAndMoveNext(TokenType.RightParentheses, $"{type} parameter list");
         }
 
-        PushState(name);
+        PushState(StateType.Function, name, null);
         try
         {
             return (parameters, ParseBlock());
         }
         finally
         {
-            PopState(name);
+            PopState(StateType.Function, name);
         }
     }
-
+    /// <param name="isTopClassFunction">
+    /// Used to ignore <see cref="TokenType.Fun"/> for class methods and properties, and to allow properties in classes.
+    /// </param>
     private FunctionStatement ParseFunctionDeclaration(bool isTopClassFunction)
     {
         if (!isTopClassFunction)
@@ -538,6 +558,14 @@ public class Parser : IParser
         }
         if (_scanner.Current.Type == TokenType.Super)
         {
+            if (!IsInClassBody)
+            {
+                throw new ParserException($"Can't use 'super' outside of class.", _scanner.Current);
+            }
+            if (CurrentClassSuperName is null)
+            {
+                throw new ParserException($"Current class doesn't inherit from another to have a super.", _scanner.Current);
+            }
             var super = _scanner.GetAndMoveNext();
             _scanner.GetAndMoveNext(TokenType.Dot, "super keyword");
             var name = _scanner.GetAndMoveNext(TokenType.Identifier, "super accessor");

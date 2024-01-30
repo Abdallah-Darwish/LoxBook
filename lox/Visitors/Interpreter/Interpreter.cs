@@ -6,7 +6,8 @@ using Lox.Visitors.Interpreters.Exceptions;
 using Lox.Visitors.Resolvers;
 namespace Lox.Visitors.Interpreters;
 
-public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSync, IReadOnlyDictionary<Token, ResolvedToken> resolverStore) : IExpressionVisitor<object?>, IStatementVisitor
+public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSync, IReadOnlyDictionary<Token, ResolvedToken> resolverStore)
+    : IExpressionVisitor<object?>, IStatementVisitor
 {
     private readonly IOutputSync<object?> _outputSync = outputSync;
     private readonly IReadOnlyDictionary<Token, ResolvedToken> _resolverStore = resolverStore;
@@ -239,15 +240,17 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
 
     public void Visit(ClassStatement s)
     {
+        LoxClass? superKlass = null;
         if (s.Super != null)
         {
             var super = _environment.Get(_resolverStore[s.Super]);
-            if (super is not LoxClass superKlass)
+            superKlass = super as LoxClass;
+            if (superKlass is null)
             {
                 throw new ClassExpectedException(s.Super);
             }
         }
-        LoxClass klass = new(s, _resolverStore, _environment);
+        LoxClass klass = new(s, superKlass, _resolverStore, _environment);
 
         _environment.Define(_resolverStore[s.Name], klass);
     }
@@ -266,4 +269,10 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
     }
 
     public object? Visit(ThisExpression e) => _environment.Get(_resolverStore[e.This]);
+
+    public object? Visit(SuperExpression e)
+    {
+        var super = _environment.Get(_resolverStore[e.Super]);
+        throw new NotImplementedException();
+    }
 }
