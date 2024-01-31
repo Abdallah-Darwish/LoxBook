@@ -5,51 +5,53 @@ using Lox.Scanners;
 namespace Lox.Parsers;
 public class Parser : IParser
 {
-    private record class State(StateType Type, Token? MemberName);
-    private record class ClassState(StateType Type, Token? MemberName, Token SuperName) : State(Type, MemberName);
-    private enum StateType
-    {
-        Function,
-        Class
-    }
-
     private IScanner _scanner;
 
-    private readonly Stack<int> _loopState = [];
-    private int _loopDepth = 0;
-    private bool IsInLoopRule => _loopDepth > 0;
-
+    private abstract record class State(int Depth, Token Id);
+    private record class FunctionState(int Depth, Token Id, Token? FunctionName) : State(Depth, Id);
+    private record class ClassState(int Depth, Token Id, Token? ClassName, Token? SuperName) : State(Depth, Id);
+    private record class LoopState(int Depth, Token Id) : State(Depth, Id);
+    private readonly Dictionary<Type, Stack<State>> _cactusState = [];
     private readonly Stack<State> _state = [];
-    private bool IsInFunctionBody => _state.TryPeek(out var fs) && fs.Type == StateType.Function;
-    private Token? CurrentFunctionName => _state.TryPeek(out var fs) && fs.Type == StateType.Function ? fs.MemberName : null;
-    private bool IsInClassBody => _state.TryPeek(out var cs) && cs is ClassState;
-    private Token? CurrentClassSuperName => _state.TryPeek(out var s) && s is ClassState cs ? cs.SuperName : null;
 
-    private void PushState(StateType type, Token? memberName, Token? superName)
+    private T? GetLastStateOf<T>() where T : State
     {
-        State state = type switch
+        if (!_cactusState.TryGetValue(typeof(T), out var tStateStack) || tStateStack.Count == 0)
         {
-            StateType.Function => new State(type, memberName),
-            StateType.Class => new ClassState(type, memberName, superName)
-        };
+            return null;
+        }
+        return tStateStack.Peek() as T;
+    }
+    private bool IsInLoopRule => (GetLastStateOf<LoopState>()?.Depth ?? -2) > Math.Max(GetLastStateOf<ClassState>()?.Depth ?? -1, GetLastStateOf<FunctionState>()?.Depth ?? -1);
+    private bool IsInFunctionBody => (GetLastStateOf<FunctionState>()?.Depth ?? -2) > (GetLastStateOf<ClassState>()?.Depth ?? -1);
+    private Token? CurrentFunctionName => GetLastStateOf<FunctionState>()?.FunctionName;
+    private bool IsInClassBody => GetLastStateOf<ClassState>() is not null;
+    private Token? CurrentClassSuperName => GetLastStateOf<ClassState>()?.SuperName;
+
+    private void PushState<T>(T state) where T : State
+    {
+        var stateType = typeof(T);
+        if (!_cactusState.TryGetValue(stateType, out var tStateStack))
+        {
+            _cactusState.Add(stateType, tStateStack = new());
+        }
+        tStateStack.Push(state);
+
         _state.Push(state);
-        _loopState.Push(_loopDepth);
-        _loopDepth = 0;
     }
 
-    private void PopState(StateType type, Token? memberName)
+    private void PopState<T>(T state) where T : State
     {
-        if (!_state.TryPop(out var state))
+        if (!_state.TryPeek(out var lastState))
         {
-            throw new InvalidOperationException("There is no state to pop, invalid state stack.");
+            throw new InvalidOperationException($"Can't pop state when state stack is empty, state: {state}");
         }
-
-        if (state.Type != type || state.MemberName != memberName)
+        if (lastState != state)
         {
-            throw new InvalidOperationException($"Pushed state(Type: {state.Type}, Name: {state.MemberName?.Text}) != Popped state(Type: {type}, name: {memberName?.Text})");
+            throw new InvalidOperationException($"Last pushed state {lastState} != to be popped state {state}");
         }
-
-        _loopDepth = _loopState.Pop();
+        _cactusState[typeof(T)].Pop();
+        _state.Pop();
     }
     private bool _disposed;
 
@@ -104,7 +106,7 @@ public class Parser : IParser
     }
     private ClassStatement ParseClassDeclaration()
     {
-        _scanner.GetAndMoveNext(TokenType.Class);
+        var klass = _scanner.GetAndMoveNext(TokenType.Class);
         var name = _scanner.GetAndMoveNext(TokenType.Identifier);
         Token? super = null;
         if (_scanner.Current.Type == TokenType.Less)
@@ -118,7 +120,8 @@ public class Parser : IParser
         }
         _scanner.GetAndMoveNext(TokenType.LeftBrace, "class name");
 
-        PushState(StateType.Class, name, super);
+        ClassState state = new(_state.Count, klass, name, super);
+        PushState(state);
         try
         {
             List<FunctionStatement> methods = [];
@@ -131,7 +134,7 @@ public class Parser : IParser
         }
         finally
         {
-            PopState(StateType.Class, name);
+            PopState(state);
         }
     }
     private VariableStatement ParseVariableDeclaration()
@@ -170,14 +173,15 @@ public class Parser : IParser
             _scanner.GetAndMoveNext(TokenType.RightParentheses, $"{type} parameter list");
         }
 
-        PushState(StateType.Function, name, null);
+        FunctionState state = new(_state.Count, _scanner.Current, name);
+        PushState(state);
         try
         {
             return (parameters, ParseBlock());
         }
         finally
         {
-            PopState(StateType.Function, name);
+            PopState(state);
         }
     }
     /// <param name="isTopClassFunction">
@@ -257,17 +261,17 @@ public class Parser : IParser
     }
     private WhileStatement ParseWhile()
     {
-        _scanner.GetAndMoveNext(TokenType.While);
+        var whilee = _scanner.GetAndMoveNext(TokenType.While);
         _scanner.GetAndMoveNext(TokenType.LeftParentheses, "while statement");
         var condition = ParseExpression();
         _scanner.GetAndMoveNext(TokenType.RightParentheses, "while statement condition");
 
-        var body = ParseLoopBody();
+        var body = ParseLoopBody(whilee);
         return new WhileStatement(condition, body);
     }
     private Statement ParseFor()
     {
-        _scanner.GetAndMoveNext(TokenType.For);
+        var forr = _scanner.GetAndMoveNext(TokenType.For);
         _scanner.GetAndMoveNext(TokenType.LeftParentheses, "for statement");
 
         Statement? init = null;
@@ -302,17 +306,18 @@ public class Parser : IParser
         }
         _scanner.GetAndMoveNext(TokenType.RightParentheses, "for statement iterator");
 
-        var body = ParseLoopBody();
+        var body = ParseLoopBody(forr);
         Statement whileBody = iter is null ? body : new BlockStatement(new Statement[] { body, iter });
         Statement whileStmt = new WhileStatement(cond, whileBody);
 
         return init is null ? whileStmt : new BlockStatement(new Statement[] { init, whileStmt });
     }
-    private Statement ParseLoopBody()
+    private Statement ParseLoopBody(Token id)
     {
-        _loopDepth++;
+        LoopState state = new(_state.Count, id);
+        PushState(state);
         try { return ParseStatement(); }
-        finally { _loopDepth--; }
+        finally { PopState(state); }
     }
     private IReadOnlyList<Statement> ParseBlock()
     {

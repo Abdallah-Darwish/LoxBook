@@ -1,8 +1,9 @@
 using System.Collections.Immutable;
+using System.Text;
 
 namespace Lox.Core;
 
-public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
+public sealed record class Token(int Line, int Column, TokenType Type, string? Lexeme)
 {
     private object? _value;
     public object? Value
@@ -79,4 +80,16 @@ public record class Token(int Line, int Column, TokenType Type, string? Lexeme)
 
     public static Token This { get; } = new(-1, -1, TokenType.This, "this");
     public static Token Super { get; } = new(-1, -1, TokenType.Super, "super");
+    private bool PrintMembers(StringBuilder builder)
+    {
+        builder
+            .Append("Line = ").Append(Line)
+            .Append(", Column = ").Append("Column")
+            .Append(", Type = ").Append(Type);
+        if (Lexeme is not null)
+        {
+            builder.Append(", Lexeme = ").Append(Lexeme);
+        }
+        return true;
+    }
 }
