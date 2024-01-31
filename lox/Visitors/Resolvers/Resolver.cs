@@ -304,5 +304,10 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
 
     public void Visit(ThisExpression e) => Resolve(e.This, true);
 
-    public void Visit(SuperExpression e) => Resolve(e.Super, true);
+    public void Visit(SuperExpression e)
+    {
+        Resolve(e.Super, true);
+        var thisToken = e.Super with { Type = Token.This.Type, Lexeme = Token.Super.Lexeme };
+        Resolve(thisToken, true);
+    }
 }

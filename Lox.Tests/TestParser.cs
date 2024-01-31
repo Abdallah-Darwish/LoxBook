@@ -458,4 +458,36 @@ class Circle {
 
         Assert.Equal(expected, stmt);
     }
+
+    [Fact]
+    public void TestParseClass_ClassHasSuper_WorksFine()
+    {
+        string source = """
+class Shape {
+    name() {
+        return nil;
+    }
+}
+class Circle < Shape {
+  init(radius) {
+    this.radius = radius;
+  }
+}
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ class Shape
+    { fun name ( )
+        { return nil }
+    }
+}
+{ class Circle < Shape
+    { fun init ( radius )
+        { [ this . radius = radius ] }
+    }
+}
+""";
+
+        Assert.Equal(expected, stmt);
+    }
 }
