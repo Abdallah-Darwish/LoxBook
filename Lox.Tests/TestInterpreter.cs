@@ -363,4 +363,61 @@ print c.hello;
 
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void TestVisitCall_ThisAndSuperMethodsHaveSameName_ShouldSelectTheRightInstanceMethod()
+    {
+        string source = """
+class A {
+  method() {
+    print "A method";
+  }
+}
+
+class B < A {
+  method() {
+    print "B method";
+  }
+
+  test() {
+    super.method();
+  }
+}
+
+class C < B {}
+
+C().test();
+""";
+
+        var result = Utility.Interpret<string>(source);
+        string[] expected = ["A method"];
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestVisitCall_ThisCallDependsOnSuper_ShouldSelectTheRightInstanceMethod()
+    {
+        string source = """
+class Doughnut {
+  cook() {
+    print "Fry until golden brown.";
+  }
+}
+
+class BostonCream < Doughnut {
+  cook() {
+    super.cook();
+    print "Pipe full of custard and coat with chocolate.";
+  }
+}
+
+BostonCream().cook();
+""";
+
+        var result = Utility.Interpret<string>(source);
+        string[] expected = ["Fry until golden brown.", "Pipe full of custard and coat with chocolate."];
+
+        Assert.Equal(expected, result);
+    }
 }

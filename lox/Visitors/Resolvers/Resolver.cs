@@ -1,4 +1,5 @@
 using Lox.Core;
+using Lox.Utilities;
 using Lox.Visitors.Interpreters.Environments;
 using Lox.Visitors.Resolvers.Exceptions;
 
@@ -282,7 +283,7 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
         {
             if (s.Super is not null)
             {
-                var superToken = Token.This with { Line = s.Super.Line, Column = s.Super.Column };
+                var superToken = Utility.GetClassSuperToken(s);
                 Declare(superToken, true);
                 Define(superToken, true);
             }
@@ -307,7 +308,6 @@ public class Resolver : IStatementVisitor, IExpressionVisitor
     public void Visit(SuperExpression e)
     {
         Resolve(e.Super, true);
-        var thisToken = e.Super with { Type = Token.This.Type, Lexeme = Token.Super.Lexeme };
-        Resolve(thisToken, true);
+        Resolve(Utility.SuperToThis(e.Super), true);
     }
 }

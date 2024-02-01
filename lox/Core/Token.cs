@@ -84,7 +84,7 @@ public sealed record class Token(int Line, int Column, TokenType Type, string? L
     {
         builder
             .Append("Line = ").Append(Line)
-            .Append(", Column = ").Append("Column")
+            .Append(", Column = ").Append(Column)
             .Append(", Type = ").Append(Type);
         if (Lexeme is not null)
         {

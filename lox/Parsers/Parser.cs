@@ -26,6 +26,7 @@ public class Parser : IParser
     private bool IsInFunctionBody => (GetLastStateOf<FunctionState>()?.Depth ?? -2) > (GetLastStateOf<ClassState>()?.Depth ?? -1);
     private Token? CurrentFunctionName => GetLastStateOf<FunctionState>()?.FunctionName;
     private bool IsInClassBody => GetLastStateOf<ClassState>() is not null;
+    private Token? CurrentClassName => GetLastStateOf<ClassState>()?.ClassName;
     private Token? CurrentClassSuperName => GetLastStateOf<ClassState>()?.SuperName;
 
     private void PushState<T>(T state) where T : State
@@ -115,7 +116,7 @@ public class Parser : IParser
             super = _scanner.GetAndMoveNext(TokenType.Identifier, "inherit operator");
             if (name.Lexeme == super.Lexeme)
             {
-                throw new ParserException("A class can't inherit from itself.", super);
+                throw new ParserException($"Class {name} can't inherit from itself.", super);
             }
         }
         _scanner.GetAndMoveNext(TokenType.LeftBrace, "class name");
@@ -565,11 +566,11 @@ public class Parser : IParser
         {
             if (!IsInClassBody)
             {
-                throw new ParserException($"Can't use 'super' outside of class.", _scanner.Current);
+                throw new ParserException("Can't use 'super' outside of class.", _scanner.Current);
             }
             if (CurrentClassSuperName is null)
             {
-                throw new ParserException($"Current class doesn't inherit from another to have a super.", _scanner.Current);
+                throw new ParserException($"Class {CurrentClassName.Text} doesn't inherit from another to have a super.", _scanner.Current);
             }
             var super = _scanner.GetAndMoveNext();
             _scanner.GetAndMoveNext(TokenType.Dot, "super keyword");

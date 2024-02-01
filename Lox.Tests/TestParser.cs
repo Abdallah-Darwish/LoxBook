@@ -490,4 +490,92 @@ class Circle < Shape {
 
         Assert.Equal(expected, stmt);
     }
+
+    [Fact]
+    public void TestParseSuper_ClassHasSuper_WorksFine()
+    {
+        string source = """
+class Shape {
+    name() {
+        return "Shape";
+    }
+}
+class Circle < Shape {
+  init(radius) {
+    this.radius = radius;
+  }
+
+  name() {
+    return super.name() + this.radius;
+  }
+}
+""";
+        var stmt = Utility.ParseAsString(source);
+        var expected = """
+{ class Shape
+    { fun name ( )
+        { return "Shape" }
+    }
+}
+{ class Circle < Shape
+    { fun init ( radius )
+        { [ this . radius = radius ] }
+    }
+    { fun name ( )
+        { return [ [ super.name ( ) ] + [ this . radius ] ] }
+    }
+}
+""";
+
+        Assert.Equal(expected, stmt);
+    }
+
+    [Fact]
+    public void TestParseSuper_ClassDoesntHaveSuper_ThrowsException()
+    {
+        string source = """
+class Shape {
+    name() {
+        return "Shape";
+    }
+}
+class Circle {
+  init(radius) {
+    this.radius = radius;
+  }
+
+  name() {
+    return super.name() + this.radius;
+  }
+}
+""";
+
+        var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
+        Assert.Contains("Class Circle doesn't inherit from another to have a super.", ex.Message);
+        Assert.Equal("super", ex.Token!.Text);
+    }
+
+    [Fact]
+    public void TestParseSuper_OutsideClass_ThrowsException()
+    {
+        string source = """
+print super.name();
+""";
+
+        var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
+        Assert.Contains("Can't use 'super' outside of class.", ex.Message);
+        Assert.Equal("super", ex.Token!.Text);
+    }
+
+    [Fact]
+    public void TestParseClass_ClassInheritsItself_ThrowsException()
+    {
+        string source = """
+class Oops < Oops {}
+""";
+
+        var ex = Assert.Throws<ParserException>(() => Utility.Parse(source));
+        Assert.Contains("Class Token { Line = 0, Column = 6, Type = Identifier, Lexeme = Oops } can't inherit from itself.", ex.Message);
+        Assert.Equal("Oops", ex.Token!.Text);
+    }
 }

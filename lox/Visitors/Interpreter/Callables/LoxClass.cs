@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Lox.Core;
+using Lox.Utilities;
 using Lox.Visitors.Interpreters.Environments;
 using Lox.Visitors.Resolvers;
 
@@ -12,6 +13,10 @@ public class LoxClass : ILoxCallable
         _declaration = declaration;
         _super = super;
         var methodsClosure = closure.Push(); // We do this because the class will open a scope for it self
+        if (_super is not null)
+        {
+            methodsClosure.Define(resolverStore[Utility.GetClassSuperToken(declaration)], _super);
+        }
         _methods = declaration.Methods.ToDictionary(m => m.Name.Text, m => new LoxFunction(m, m.Parameters.Select(p => resolverStore[p]).ToArray(), methodsClosure));
         _methods.TryGetValue("init", out _initializer);
         if (_initializer is not null && _initializer.IsProperty)

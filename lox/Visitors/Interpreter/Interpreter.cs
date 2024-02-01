@@ -1,5 +1,6 @@
 using System.Collections;
 using Lox.Core;
+using Lox.Utilities;
 using Lox.Visitors.Interpreters.Callables;
 using Lox.Visitors.Interpreters.Environments;
 using Lox.Visitors.Interpreters.Exceptions;
@@ -273,8 +274,7 @@ public class Interpreter(ILoxEnvironment? globals, IOutputSync<object?> outputSy
     public object? Visit(SuperExpression e)
     {
         var super = _environment.Get(_resolverStore[e.Super]) as LoxClass;
-        var thisToken = e.Super with { Type = Token.This.Type, Lexeme = Token.Super.Lexeme };
-        var instance = _environment.Get(_resolverStore[thisToken]) as LoxInstance;
+        var instance = _environment.Get(_resolverStore[Utility.SuperToThis(e.Super)]) as LoxInstance;
         var method = instance.BindMethod(e.Name.Lexeme, super);
 
         return method;
